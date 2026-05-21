@@ -1,0 +1,1202 @@
+{
+  "name": "RoyalSoft Recall.ai Production Proxy - FIXED v2 API Key Set",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "recall-start",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -900,
+        -180
+      ],
+      "id": "recall-start-webhook",
+      "name": "Webhook - Recall Start"
+    },
+    {
+      "parameters": {
+        "jsCode": "const incoming = $input.first().json || {};\nconst body = incoming.body ?? incoming;\n\nfunction cleanString(v, fallback = '') {\n  return String(v ?? fallback).trim();\n}\n\nconst meetingUrl = cleanString(body.meeting_url || body.meetingUrl);\nconst region = cleanString(body.region, 'ap-northeast-1');\nconst botName = cleanString(body.bot_name || body.botName, 'RoyalSoft SDLC Recorder');\nconst projectName = cleanString(body.project_name || body.projectName, 'RoyalSoft TMS');\nconst meetingTitle = cleanString(body.meeting_title || body.title, `${projectName} SDLC Meeting`);\nconst languageCode = cleanString(body.language_code || body.languageCode, 'auto');\nconst transcriptionMode = cleanString(body.transcription_mode || body.transcriptionMode, 'prioritize_accuracy');\nconst realtimeTranscriptWebhook = cleanString(body.realtime_transcript_webhook || body.realtimeTranscriptWebhook, 'https://royalsoft.app.n8n.cloud/webhook/recall-realtime-transcript');\nconst enableRealtime = body.enable_realtime_transcript !== false;\nconst enableCanonical = body.enable_canonical_segments !== false;\n\n// VALIDATION - Simple and reliable\nif (!meetingUrl || meetingUrl.length < 10) {\n  return [{ json: { success: false, status: 'error', error_code: 'MEETING_URL_REQUIRED', message: 'meeting_url is required.', fix_hint: 'Provide a valid meeting URL starting with https://.', retryable: true } }];\n}\n\n// Simple URL format check - just needs https:// and domain\nif (!meetingUrl.startsWith('https://') && !meetingUrl.startsWith('http://')) {\n  return [{ json: { success: false, status: 'error', error_code: 'INVALID_MEETING_URL', message: 'Meeting URL must start with https://', meeting_url: meetingUrl, fix_hint: 'Make sure the URL starts with https://.', retryable: true } }];\n}\n\n// Check for known meeting platforms\nconst hasValidDomain = meetingUrl.includes('meet.google.com') || \n                       meetingUrl.includes('zoom.us') || \n                       meetingUrl.includes('teams.microsoft.com') ||\n                       meetingUrl.includes('webex.com');\n\nif (!hasValidDomain) {\n  return [{ json: { success: false, status: 'error', error_code: 'UNSUPPORTED_PLATFORM', message: 'URL must be from Google Meet, Zoom, Teams, or Webex. Recall.ai may not support other platforms.', meeting_url: meetingUrl, fix_hint: 'Use a Google Meet, Zoom, Teams, or Webex URL.', retryable: false } }];\n}\n\n// Region validation\nif (!['ap-northeast-1','ap-southeast-1','us-west-2','us-east-1','eu-central-1'].includes(region)) {\n  return [{ json: { success: false, status: 'error', error_code: 'INVALID_REGION', message: `Unsupported Recall region: ${region}. Use: ap-northeast-1, us-west-2, us-east-1, eu-central-1`, fix_hint: 'Use one of the supported regions.', retryable: true } }];\n}\n\n// ALL VALID - Return normalized data\nreturn [{\n  json: {\n    valid: true,\n    meeting_url: meetingUrl,\n    region,\n    bot_name: botName,\n    project_name: projectName,\n    meeting_title: meetingTitle,\n    language_code: languageCode,\n    transcription_mode: transcriptionMode,\n    realtime_transcript_webhook: realtimeTranscriptWebhook,\n    enable_realtime_transcript: enableRealtime,\n    enable_canonical_segments: enableCanonical\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -680,
+        -180
+      ],
+      "id": "code-normalize-start",
+      "name": "Code - Normalize Start"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "valid-start-check",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "name": "filter.operator.true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -460,
+        -180
+      ],
+      "id": "if-valid-start",
+      "name": "IF - Valid Start"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://' + $json.region + '.recall.ai/api/v1/bot/' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Token b4b49ce6a2f3b5e3b02e2335e994c52d456f90cc"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n({\n  meeting_url: $json.meeting_url,\n  bot_name: $json.bot_name,\n  recording_config: {\n    video_mixed_mp4: {},\n    meeting_metadata: {},\n    participant_events: {},\n    transcript: {\n      provider: {\n        recallai_streaming: {\n          mode: $json.transcription_mode || 'prioritize_accuracy',\n          language_code: $json.language_code || 'auto'\n        }\n      }\n    },\n    realtime_endpoints: $json.enable_realtime_transcript === false ? [] : [\n      {\n        type: 'webhook',\n        url: $json.realtime_transcript_webhook || 'https://royalsoft.app.n8n.cloud/webhook/recall-realtime-transcript',\n        events: ['transcript.data']\n      }\n    ]\n  },\n  metadata: {\n    meeting_title: $json.meeting_title,\n    project_name: $json.project_name,\n    source: 'royalsoft_n8n_recall_google_meet',\n    created_by: 'royalsoft_recall_sdlc_lifecycle_dashboard'\n  }\n})\n}}",
+        "options": {
+          "timeout": 120000,
+          "retryOnFail": true,
+          "maxTries": 2,
+          "waitBetweenTries": 2000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -220,
+        -300
+      ],
+      "id": "http-create-recall-bot",
+      "name": "HTTP - Create Recall Bot",
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const envelope = $input.first().json || {};\nconst start = $('Code - Normalize Start').first().json || {};\n\nfunction tryJson(v) {\n  if (typeof v !== 'string') return v;\n  try { return JSON.parse(v); } catch (e) { return v; }\n}\n\nfunction unwrap(v) {\n  v = tryJson(v);\n  if (Array.isArray(v) && v.length === 1) return unwrap(v[0]);\n  if (!v || typeof v !== 'object') return v;\n  // n8n/HTTP nodes may wrap responses in body/data/response/result.\n  for (const key of ['body','data','response','result','json']) {\n    if (v[key] && typeof v[key] === 'object') {\n      const inner = unwrap(v[key]);\n      if (inner && typeof inner === 'object' && (inner.id || inner.bot_id || inner.status_changes || inner.error || inner.detail || inner.message)) return inner;\n    }\n  }\n  return v;\n}\n\nfunction findId(v, depth = 0) {\n  if (!v || depth > 4) return null;\n  if (typeof v !== 'object') return null;\n  if (v.id) return v.id;\n  if (v.bot_id) return v.bot_id;\n  if (v.uuid) return v.uuid;\n  for (const key of ['body','data','response','result','raw','json']) {\n    const id = findId(v[key], depth + 1);\n    if (id) return id;\n  }\n  return null;\n}\n\nfunction latestStatus(v) {\n  const changes = Array.isArray(v?.status_changes) ? v.status_changes : [];\n  return changes.length ? (changes[changes.length - 1].code || changes[changes.length - 1].status || 'created') : (v?.status || 'created');\n}\n\nfunction extractError(v) {\n  if (!v || typeof v !== 'object') return String(v || 'Unknown error');\n  if (v.error?.message) return v.error.message;\n  if (typeof v.error === 'string') return v.error;\n  if (v.detail) return typeof v.detail === 'string' ? v.detail : JSON.stringify(v.detail);\n  if (v.message && !v.id) return v.message;\n  if (v.errors) return JSON.stringify(v.errors);\n  return 'Recall create bot response did not include id.';\n}\n\nconst raw = unwrap(envelope);\nconst botId = findId(raw);\n\nif (!botId) {\n  return [{ json: {\n    status: 'error',\n    success: false,\n    error_code: 'RECALL_CREATE_NO_BOT_ID',\n    message: extractError(raw),\n    bot_id: null,\n    endpoint: `https://${start.region}.recall.ai/api/v1/bot/`,\n    meeting_url: start.meeting_url,\n    region: start.region,\n    raw_response: envelope,\n    normalized_response: raw,\n    fix_hint: 'Open this n8n execution and inspect HTTP - Create Recall Bot. Common causes: wrong region for API key, invalid/expired key, inactive workflow, invalid Google Meet URL, or Recall 507 capacity error.'\n  }}];\n}\n\nreturn [{ json: {\n  status: 'created',\n  success: true,\n  message: 'Bot created successfully.',\n  bot_id: botId,\n  id: botId,\n  bot_status: latestStatus(raw),\n  meeting_url: raw.meeting_url || start.meeting_url,\n  region: start.region,\n  project_name: start.project_name,\n  raw: raw,\n  raw_response: envelope\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        -300
+      ],
+      "id": "code-normalize-create-result",
+      "name": "Code - Normalize Create Result"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        240,
+        -300
+      ],
+      "id": "respond-start",
+      "name": "Respond - Start Result"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -220,
+        -60
+      ],
+      "id": "respond-start-invalid",
+      "name": "Respond - Start Invalid"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "recall-status",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -900,
+        180
+      ],
+      "id": "recall-status-webhook",
+      "name": "Webhook - Recall Status"
+    },
+    {
+      "parameters": {
+        "jsCode": "const incoming = $input.first().json || {};\nconst body = incoming.body ?? incoming;\nconst botId = String(body.bot_id || body.botId || body.id || '').trim();\nconst region = String(body.region || 'ap-northeast-1').trim();\nif (!botId) return [{ json: { success: false, status: 'error', error_code: 'BOT_ID_REQUIRED', message: 'bot_id is required.', fix_hint: 'Provide a valid bot_id from the Join Meeting response.', retryable: true } }];\nreturn [{ json: { valid: true, bot_id: botId, region } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -680,
+        180
+      ],
+      "id": "code-normalize-status",
+      "name": "Code - Normalize Status"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "valid-status-check",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "name": "filter.operator.true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -460,
+        180
+      ],
+      "id": "if-valid-status",
+      "name": "IF - Valid Status"
+    },
+    {
+      "parameters": {
+        "url": "={{ 'https://' + $json.region + '.recall.ai/api/v1/bot/' + $json.bot_id + '/' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Token b4b49ce6a2f3b5e3b02e2335e994c52d456f90cc"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 120000,
+          "retryOnFail": true,
+          "maxTries": 2,
+          "waitBetweenTries": 2000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -220,
+        60
+      ],
+      "id": "http-retrieve-recall-bot",
+      "name": "HTTP - Retrieve Recall Bot",
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const envelope = $input.first().json || {};\nconst req = $('Code - Normalize Status').first().json || {};\nfunction unwrap(v){\n  if(typeof v==='string'){try{return JSON.parse(v)}catch(e){return v}}\n  if(Array.isArray(v)&&v.length===1)return unwrap(v[0]);\n  if(v&&typeof v==='object'){\n    for(const k of ['body','data','response','result','json']){\n      if(v[k]&&typeof v[k]==='object'){\n        const inner=unwrap(v[k]);\n        if(inner&&typeof inner==='object'&&(inner.id||inner.status_changes||inner.error||inner.detail||inner.message))return inner;\n      }\n    }\n  }\n  return v;\n}\nfunction latest(v){const c=Array.isArray(v?.status_changes)?v.status_changes:[];return c.length?(c[c.length-1].code||c[c.length-1].status||'unknown'):(v?.status||'unknown')}\nconst raw=unwrap(envelope);\nif(!raw || typeof raw!=='object' || raw.error || raw.detail || (raw.message && !raw.id)){\n  return [{json:{status:'error',success:false,error_code:'RECALL_STATUS_FAILED',message:raw?.detail||raw?.error?.message||raw?.error||raw?.message||'Recall status failed.',fix_hint:'Check Recall API status and bot_id.',retryable:true,bot_id:req.bot_id,raw_response:envelope,normalized_response:raw}}];\n}\nreturn [{json:{status:'ok',success:true,bot_id:raw.id||req.bot_id,bot_status:latest(raw),raw,raw_response:envelope}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        60
+      ],
+      "id": "code-normalize-status-result",
+      "name": "Code - Normalize Status Result"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        240,
+        60
+      ],
+      "id": "respond-status",
+      "name": "Respond - Status Result"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -220,
+        300
+      ],
+      "id": "respond-status-invalid",
+      "name": "Respond - Status Invalid"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "recall-transcript",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -900,
+        560
+      ],
+      "id": "recall-transcript-webhook",
+      "name": "Webhook - Recall Transcript"
+    },
+    {
+      "parameters": {
+        "jsCode": "const incoming = $input.first().json || {};\nconst body = incoming.body ?? incoming;\nconst botId = String(body.bot_id || body.botId || body.id || '').trim();\nconst region = String(body.region || 'ap-northeast-1').trim();\nif (!botId) return [{ json: { success: false, status: 'error', error_code: 'BOT_ID_REQUIRED', message: 'bot_id is required.', fix_hint: 'Provide a valid bot_id from the Join Meeting response.', retryable: true } }];\nreturn [{ json: { valid: true, bot_id: botId, region } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -680,
+        560
+      ],
+      "id": "code-normalize-transcript",
+      "name": "Code - Normalize Transcript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "valid-transcript-check",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "name": "filter.operator.true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -460,
+        560
+      ],
+      "id": "if-valid-transcript",
+      "name": "IF - Valid Transcript"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://' + $json.region + '.recall.ai/api/v1/transcript/' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Token b4b49ce6a2f3b5e3b02e2335e994c52d456f90cc"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "bot",
+              "value": "={{ $json.bot_id }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 120000,
+          "retryOnFail": true,
+          "maxTries": 2,
+          "waitBetweenTries": 2000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -220,
+        440
+      ],
+      "id": "http-get-recall-transcript",
+      "name": "HTTP - Get Recall Transcript",
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const envelope = $input.first().json || {};\nconst req = $('Code - Normalize Transcript').first().json || {};\n\n// ── PRIORITY: propagate not_ready / no_results / no_done_transcript ────────\n// When Code - Extract Transcript URL returns these statuses, HTTP - Download\n// S3 fails (undefined URL) and sends an error envelope here. We must recover\n// the original status from that node so the HTML auto-retry loop works.\ntry {\n  const extractResult = $('Code - Extract Transcript URL').first().json;\n  if (extractResult && ['not_ready', 'no_results', 'no_done_transcript'].includes(extractResult.status)) {\n    return [{ json: { ...extractResult, bot_id: extractResult.bot_id || req.bot_id } }];\n  }\n  // Also propagate hard errors from the list endpoint\n  if (extractResult && extractResult.status === 'error' && extractResult.error_code &&\n      extractResult.error_code.startsWith('RECALL_LIST_HTTP_')) {\n    return [{ json: { ...extractResult, bot_id: extractResult.bot_id || req.bot_id } }];\n  }\n} catch(_priorityErr) {}\n\nconsole.log(\"ALL ITEMS COUNT:\", $input.all().length);\nconsole.log(\"RAW INPUT KEYS:\", Object.keys(envelope));\nconsole.log(\"ENVELOPE TYPE:\", typeof envelope);\nconsole.log(\"BODY TYPE:\", typeof envelope.body, envelope.body ? envelope.body.constructor?.name || typeof envelope.body : 'N/A');\nconsole.log(\"BODY IS STRING:\", typeof envelope.body === 'string');\nconsole.log(\"BODY IS ARRAY:\", Array.isArray(envelope.body));\nconsole.log(\"BODY LENGTH:\", typeof envelope.body === 'string' ? envelope.body.length : (Array.isArray(envelope.body) ? envelope.body.length : 'N/A'));\nif (typeof envelope.body === 'string') console.log(\"BODY PREVIEW (first 200):\", envelope.body.slice(0, 200));\nif (typeof envelope.data === 'string') console.log(\"DATA PREVIEW (first 200):\", envelope.data.slice(0, 200));\nconsole.log(\"ENVELOPE STATUS:\", envelope.status);\n\n// ===== CASE A: Segments already in envelope (from Code - Extract URL via https) =====\nif (envelope.status === 'done' && envelope.segments && Array.isArray(envelope.segments) && envelope.segments.length > 0) {\n  console.log(\"Segments from envelope.segments:\", envelope.segments.length);\n  return processSegments(envelope.segments, envelope);\n}\n\n// ===== CASE B: s3_download_failed - but download_url available, let HTTP node handle it =====\nif (envelope.status === 's3_download_failed' || envelope.status === 's3_parse_failed') {\n  // If download_url exists, let it pass through to HTTP node (which has continueOnFail: true)\n  if (envelope.download_url) {\n    return [{ json: envelope }];\n  }\n  return [{ json: {\n    success: false,\n    status: envelope.status,\n    message: envelope.message || 'S3 download failed.',\n    error_detail: envelope.error_detail || '',\n    bot_id: envelope.bot_id || req.bot_id || '',\n    transcript_id: envelope.transcript_id || '',\n    retryable: true,\n    fix_hint: 'Try again. If persists, the S3 pre-signed URL may have expired.'\n  }}];\n}\n\n// ===== CASE C: Input from HTTP - Download Transcript S3 node =====\n// HTTP error detection for S3 node failures\nconst httpErrStatusCode = envelope.statusCode || envelope.status_code || envelope.response?.statusCode || envelope.response?.status || (typeof envelope.status === 'number' ? envelope.status : 0) || 0;\nif (httpErrStatusCode >= 400 || envelope.error || envelope.error_code || (envelope.body && (envelope.body.error || envelope.body.error_code))) {\n  const errBody = envelope.body || envelope.data || envelope.error || {};\n  const detail = errBody.detail || errBody.message || errBody.error || (typeof errBody === 'string' ? errBody : JSON.stringify(errBody).slice(0, 200));\n  const statusCode = httpErrStatusCode || '?';\n  return [{ json: {\n    success: false,\n    status: 'http_error',\n    status_code: statusCode,\n    error_code: 'RECALL_HTTP_' + statusCode,\n    message: 'S3 download returned HTTP ' + statusCode + ': ' + detail,\n    raw_response: envelope,\n    fix_hint: 'S3 download URL may have expired. Try fetching transcript list again.',\n    retryable: [401, 404, 425, 429, 500, 502, 503].includes(Number(statusCode))\n  }}];\n}\n\n// Extract segments from S3 HTTP response\nlet segments = [];\n\n// Case 1: n8n multi-item response (HTTP node splits JSON arrays)\nconst allItems = $input.all();\nif (allItems.length > 1) {\n  segments = allItems.map(item => item.json).filter(x => x && typeof x === 'object');\n  console.log(\"Segments from multi-item S3 response:\", segments.length);\n}\n// Case 2: Direct array\nelse if (Array.isArray(envelope) && envelope.length > 0) {\n  segments = envelope;\n  console.log(\"Segments from direct array:\", segments.length);\n}\n// Case 3: body array\nelse if (envelope?.body && Array.isArray(envelope.body) && envelope.body.length > 0) {\n  segments = envelope.body;\n  console.log(\"Segments from envelope.body:\", segments.length);\n}\n// Case 4: body string (JSON.parse needed)\nelse if (envelope?.body && typeof envelope.body === 'string' && envelope.body.length > 0) {\n  try {\n    const parsed = JSON.parse(envelope.body);\n    if (Array.isArray(parsed) && parsed.length > 0) {\n      segments = parsed;\n      console.log(\"Segments from parsed envelope.body string:\", segments.length);\n    }\n  } catch (e) {\n    console.log(\"Failed to parse envelope.body as JSON:\", e.message.slice(0, 100));\n    // Try partial parse - maybe it's truncated\n    try {\n      const trimmed = envelope.body.trim();\n      if (trimmed.startsWith('[') && trimmed.endsWith(']')) {\n        // Already tried full parse, failed. Try without last char in case truncated\n        const partial = JSON.parse(trimmed.slice(0, -1) + ']');\n        if (Array.isArray(partial) && partial.length > 0) {\n          segments = partial;\n          console.log(\"Segments from partial parse:\", segments.length);\n        }\n      }\n    } catch (e2) {}\n  }\n}\n// Case 5: body is object/Buffer (n8n treats application/octet-stream as binary)\nelse if (envelope?.body && typeof envelope.body === 'object' && envelope.body !== null) {\n  // Buffer object - try toString()\n  try {\n    const str = String(envelope.body);\n    if (str.length > 0) {\n      const parsed = JSON.parse(str);\n      if (Array.isArray(parsed) && parsed.length > 0) {\n        segments = parsed;\n        console.log(\"Segments from Buffer.toString():\", segments.length);\n      }\n    }\n  } catch (e) {\n    console.log(\"Failed to parse Buffer body:\", e.message.slice(0, 100));\n  }\n}\n// Case 6: raw envelope is string (HTTP returned raw JSON string)\nelse if (typeof envelope === 'string' && envelope.length > 0) {\n  try {\n    const parsed = JSON.parse(envelope);\n    if (Array.isArray(parsed) && parsed.length > 0) {\n      segments = parsed;\n      console.log(\"Segments from parsed envelope string:\", segments.length);\n    }\n  } catch (e) {\n    console.log(\"Failed to parse envelope as JSON:\", e.message.slice(0, 100));\n  }\n}\n// Case 7: data array\nelse if (envelope?.data && Array.isArray(envelope.data) && envelope.data.length > 0) {\n  segments = envelope.data;\n  console.log(\"Segments from envelope.data:\", segments.length);\n}\n// Case 8: data is string (JSON.parse needed)\nelse if (envelope?.data && typeof envelope.data === 'string' && envelope.data.length > 0) {\n  try {\n    const parsed = JSON.parse(envelope.data);\n    if (Array.isArray(parsed) && parsed.length > 0) {\n      segments = parsed;\n      console.log(\"Segments from parsed envelope.data:\", segments.length);\n    }\n  } catch (e) {\n    console.log(\"Failed to parse envelope.data as JSON:\", e.message.slice(0, 100));\n  }\n}\n\n// Case 9: RECURSIVE SEARCH - search ALL object properties for arrays\nif (segments.length === 0) {\n  function deepFindArray(obj, depth) {\n    if (depth > 6 || !obj || typeof obj !== 'object') return null;\n    if (Array.isArray(obj) && obj.length > 0) {\n      // Check if this looks like a segments array\n      const first = obj[0];\n      if (first && typeof first === 'object' && (first.participant || first.words || first.speaker || first.text || first.speaker_name)) {\n        return obj;\n      }\n    }\n    const keys = Object.keys(obj);\n    for (const key of keys) {\n      try {\n        const result = deepFindArray(obj[key], depth + 1);\n        if (result) return result;\n      } catch(e) {}\n    }\n    return null;\n  }\n  try {\n    const found = deepFindArray(envelope, 0);\n    if (found) {\n      segments = found;\n      console.log(\"Segments from deep recursive search:\", segments.length);\n    }\n  } catch(e) {\n    console.log(\"Deep search failed:\", e.message.slice(0, 100));\n  }\n}\n\nif (segments.length === 0) {\n  const rawJson = envelope;\n  const hasAnyData = JSON.stringify(rawJson).length > 50;\n  if (hasAnyData) {\n    const results = rawJson.results || rawJson.body?.results || rawJson.data?.results;\n    if (Array.isArray(results)) {\n      return [{ json: {\n        success: true,\n        status: 'no_segments',\n        segment_count: 0,\n        transcript_count: results.length,\n        message: 'Transcript list returned but S3 download failed or returned empty.',\n        retry_after_seconds: 30\n      }}];\n    }\n    return [{ json: {\n      success: false,\n      status: 'parse_failed',\n      error_code: 'NO_SEGMENTS_FOUND',\n      message: 'S3 download returned no segments. Unknown response format.',\n      raw_preview: JSON.stringify(rawJson).slice(0, 500),\n      raw_body_type: typeof rawJson.body,\n      raw_body_constructor: rawJson.body ? rawJson.body.constructor?.name || typeof rawJson.body : 'N/A',\n      raw_body_is_string: typeof rawJson.body === 'string',\n      raw_body_is_array: Array.isArray(rawJson.body),\n      raw_body_length: typeof rawJson.body === 'string' ? rawJson.body.length : (Array.isArray(rawJson.body) ? rawJson.body.length : (rawJson.body ? 'object' : 'none')),\n      raw_body_preview: typeof rawJson.body === 'string' ? rawJson.body.slice(0, 300) : (Array.isArray(rawJson.body) ? 'Array(' + rawJson.body.length + ')' : JSON.stringify(rawJson.body).slice(0, 300)),\n      fix_hint: 'Check S3 download response format in n8n execution log.'\n    }}];\n  }\n  return [{ json: {\n    success: true,\n    status: 'not_ready',\n    segment_count: 0,\n    retry_after_seconds: 30,\n    message: 'Transcript not ready or empty. Try again after 30 seconds.'\n  }}];\n}\n\n// ===== PROCESS SEGMENTS =====\nreturn processSegments(segments, envelope);\n\n// ===== SHARED PROCESSING FUNCTION =====\nfunction processSegments(segments, sourceEnvelope) {\n  function getText(seg) {\n    if (!seg) return '';\n    if (typeof seg === 'string') return seg;\n    if (Array.isArray(seg.words)) {\n      return seg.words.map(w => w.text || w.word || '').filter(t => t).join(' ');\n    }\n    if (seg.text) return seg.text;\n    if (seg.transcript) return seg.transcript;\n    if (seg.content) return seg.content;\n    if (seg.data?.text) return seg.data.text;\n    if (seg.data?.content) return seg.data.content;\n    if (Array.isArray(seg.data?.words)) return seg.data.words.map(w => w.text || w.word || '').join(' ');\n    return '';\n  }\n\n  function getSpeaker(seg) {\n    if (!seg) return 'Speaker';\n    if (seg.participant) {\n      return seg.participant.name || seg.participant.speaker || seg.participant.id || 'Speaker';\n    }\n    return seg.speaker || seg.speaker_name || seg.participant_name || seg.participant?.name ||\n           seg.from_user || seg.name || seg.full_name || seg.data?.participant?.name ||\n           seg.data?.speaker || 'Speaker';\n  }\n\n  function getStartMs(seg) {\n    if (!seg) return 0;\n    if (Array.isArray(seg.words) && seg.words.length > 0 && seg.words[0].start_timestamp) {\n      const rel = seg.words[0].start_timestamp.relative;\n      if (rel !== undefined) return Math.round(rel * 1000);\n    }\n    const n = Number(seg?.start_timestamp?.relative || seg?.start_timestamp || seg?.start_time || seg?.start || seg?.offset || seg?.data?.start_timestamp?.relative || 0);\n    return n || 0;\n  }\n\n  function getEndMs(seg) {\n    if (!seg) return 0;\n    if (Array.isArray(seg.words) && seg.words.length > 0) {\n      const last = seg.words[seg.words.length - 1];\n      if (last?.end_timestamp?.relative !== undefined) return Math.round(last.end_timestamp.relative * 1000);\n    }\n    const n = Number(seg?.end_timestamp?.relative || seg?.end_timestamp || seg?.end_time || seg?.end || 0);\n    return n || 0;\n  }\n\n  function stableHash(input) {\n    let hash = 0;\n    for (let i = 0; i < input.length; i++) {\n      const char = input.charCodeAt(i);\n      hash = ((hash << 5) - hash) + char;\n      hash = hash & hash;\n    }\n    return 'seg_' + Math.abs(hash).toString(16).padStart(8, '0');\n  }\n\n  const processed = segments.map((s, i) => {\n    const rawText = getText(s).replace(/\\s+/g, ' ').trim();\n    const sp = getSpeaker(s);\n    const startMs = getStartMs(s);\n    const endMs = getEndMs(s);\n    const startSec = Math.round(startMs > 10000 ? startMs/1000 : startMs);\n    const endSec = Math.round(endMs > 10000 ? endMs/1000 : endMs);\n    const minutes = Math.floor(startSec / 60);\n    const secs = String(startSec % 60).padStart(2, '0');\n    const segId = stableHash(String(req.bot_id || '') + sp + String(startMs) + rawText.slice(0, 50));\n    return {\n      segment_id: segId,\n      meeting_id: req.bot_id || '',\n      bot_id: req.bot_id || '',\n      sequence_no: i + 1,\n      speaker_id: sp.replace(/\\s+/g, '_').toLowerCase(),\n      speaker_name: sp,\n      start_ms: startMs,\n      end_ms: endMs,\n      start_time: String(minutes).padStart(2, '0') + ':' + secs,\n      start_seconds: startSec,\n      end_seconds: endSec,\n      time: minutes + ':' + secs,\n      text_raw: rawText,\n      text_clean: rawText,\n      treated_text: '',\n      language_detected: 'unknown',\n      confidence: null,\n      is_final: true,\n      source: 'recall_final_transcript',\n      raw_json: s\n    };\n  }).filter(s => s.text_raw);\n\n  const seen = new Set();\n  const uniqueSegments = processed.filter(s => {\n    if (seen.has(s.segment_id)) return false;\n    seen.add(s.segment_id);\n    return true;\n  });\n\n  uniqueSegments.sort((a, b) => a.start_ms - b.start_ms);\n  uniqueSegments.forEach((s, i) => s.sequence_no = i + 1);\n\n  const speakerSet = new Set(uniqueSegments.map(s => s.speaker_name));\n  const totalDuration = uniqueSegments.length > 0 ? Math.max(...uniqueSegments.map(s => s.end_seconds || s.start_seconds)) : 0;\n\n  const cleaningStats = {\n    original_count: segments.length,\n    cleaned_count: uniqueSegments.length,\n    empty_removed: segments.length - processed.filter(s => s.text_raw).length + (segments.length - uniqueSegments.length),\n    duplicates_removed: segments.length - uniqueSegments.length,\n    merged_segments: 0,\n    speaker_count: speakerSet.size,\n    total_duration_seconds: totalDuration\n  };\n\n  const transcript_text = uniqueSegments.map(s => '[' + s.start_time + '] ' + s.speaker_name + ': ' + s.text_clean).join('\\n');\n\n  if (!uniqueSegments.length) {\n    return [{ json: {\n      success: true,\n      status: 'no_segments',\n      segment_count: 0,\n      message: 'S3 returned segments but all were empty or filtered out.',\n      cleaning_stats: cleaningStats\n    }}];\n  }\n\n  return [{\n    json: {\n      status: 'ok',\n      success: true,\n      bot_id: req.bot_id || '',\n      segment_count: uniqueSegments.length,\n      transcript_text,\n      transcript: transcript_text,\n      canonical_segments: uniqueSegments,\n      cleaning_stats: cleaningStats,\n      raw_transcript: segments,\n      raw_response: sourceEnvelope,\n      message: 'Transcript fetched. ' + uniqueSegments.length + ' segments, ' + speakerSet.size + ' speakers.'\n    }\n  }];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        440
+      ],
+      "id": "code-convert-transcript",
+      "name": "Code - Convert Transcript to TXT"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        240,
+        440
+      ],
+      "id": "respond-transcript",
+      "name": "Respond - Transcript Result"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -220,
+        680
+      ],
+      "id": "respond-transcript-invalid",
+      "name": "Respond - Transcript Invalid"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "recall-leave",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -800,
+        920
+      ],
+      "id": "d276031b-f728-407d-a67d-72fcf5a4d327",
+      "name": "Webhook - Recall Leave"
+    },
+    {
+      "parameters": {
+        "jsCode": "const incoming = $input.first().json || {};\nconst body = incoming.body ?? incoming;\nconst botId = String(body.bot_id || body.botId || body.id || '').trim();\nconst region = String(body.region || 'ap-northeast-1').trim();\nif (!botId) return [{ json: { success: false, status: 'error', error_code: 'BOT_ID_REQUIRED', message: 'bot_id is required.', fix_hint: 'Provide a valid bot_id from the Join Meeting response.', retryable: true } }];\nreturn [{ json: { valid: true, bot_id: botId, region } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -560,
+        920
+      ],
+      "id": "8f0fae20-9f66-4b7d-8b53-fb6e6c8cb322",
+      "name": "Code - Normalize Leave"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "valid-leave-check",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "name": "filter.operator.true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -320,
+        920
+      ],
+      "id": "ba206586-fdd0-404e-bcc8-bc15cf2faab8",
+      "name": "IF - Valid Leave"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://' + $json.region + '.recall.ai/api/v1/bot/' + $json.bot_id + '/leave_call/' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Token b4b49ce6a2f3b5e3b02e2335e994c52d456f90cc"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 120000,
+          "retryOnFail": true,
+          "maxTries": 2,
+          "waitBetweenTries": 2000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -80,
+        800
+      ],
+      "id": "688c8c26-2758-4101-970e-f87ad287b959",
+      "name": "HTTP - Leave Recall Bot",
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const envelope = $input.first().json || {};\nconst req = $('Code - Normalize Leave').first().json || {};\nreturn [{json:{status:'ok',success:true,message:'Leave command sent to Recall.ai bot.',bot_id:req.bot_id,raw_response:envelope}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        160,
+        800
+      ],
+      "id": "5aab9db9-6254-43db-a345-9f91c2692714",
+      "name": "Code - Normalize Leave Result"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        400,
+        800
+      ],
+      "id": "b7f98db7-0c31-44a6-8324-f57378952215",
+      "name": "Respond - Leave Result"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -80,
+        1040
+      ],
+      "id": "a70a96b6-6067-4fc8-9be9-87102b329d1c",
+      "name": "Respond - Leave Invalid"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "recall-treat-transcript",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -800,
+        1280
+      ],
+      "id": "727df621-58da-4126-9d4b-834c0b53669e",
+      "name": "Webhook - Treat Transcript"
+    },
+    {
+      "parameters": {
+        "jsCode": "const incoming = $input.first().json;\nconst body = incoming.body ?? incoming;\nconst transcript = String(body.transcript || body.transcript_text || '').trim();\nconst projectName = String(body.project_name || body.projectName || 'RoyalSoft TMS').trim();\nconst meetingId = String(body.meeting_id || body.meetingId || '').trim();\nif (!transcript || transcript.length < 80) return [{ json: { success: false, status: 'error', error_code: 'TRANSCRIPT_TOO_SHORT', message: 'Transcript missing or too short (<80 chars).', fix_hint: 'Build and fetch a transcript first. Minimum 80 characters required.', retryable: true } }];\nreturn [{ json: { valid: true, transcript, project_name: projectName, meeting_id: meetingId, raw_transcript_json: body.raw_transcript_json || null } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -560,
+        1280
+      ],
+      "id": "77f839f2-7123-4b92-a9e6-6bd716017a72",
+      "name": "Code - Normalize Treatment"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "valid-treatment-check",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "name": "filter.operator.true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -320,
+        1280
+      ],
+      "id": "1c55cc1c-736e-47db-9e1a-a03af9ca8ccc",
+      "name": "IF - Valid Treatment"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + ($env.OPENAI_API_KEY || 'PASTE_OPENAI_API_KEY_HERE') }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n({\n  model: 'gpt-4o-mini',\n  temperature: 0.05,\n  response_format: { type: 'json_object' },\n  messages: [\n    { role: 'system', content: 'You are a meeting transcript cleaner for software requirement meetings. Return only valid JSON.' },\n    { role: 'user', content: 'Clean and normalize this meeting transcript. Rules: English must remain English. Urdu/Hindi/Punjabi content must be converted into clear Roman English, not Urdu script. Preserve speaker-wise detail. Do not invent requirements. Return JSON: {\\\"treated_transcript\\\":\\\"string\\\",\\\"summary\\\":\\\"string\\\",\\\"requirements_candidates\\\":[\\\"string\\\"],\\\"decisions\\\":[\\\"string\\\"],\\\"action_items\\\":[\\\"string\\\"],\\\"unclear_items\\\":[\\\"string\\\"],\\\"segments\\\":[{\\\"segment_id\\\":\\\"string\\\",\\\"speaker_name\\\":\\\"string\\\",\\\"time\\\":\\\"string\\\",\\\"original_text\\\":\\\"string\\\",\\\"treated_text\\\":\\\"string\\\",\\\"language\\\":\\\"en|ur|hi|pa|mixed|unknown\\\",\\\"changed\\\":true}]}. Project: ' + $json.project_name + '\\n\\nTranscript:\\n' + $json.transcript }\n  ]\n})\n}}",
+        "options": {
+          "timeout": 120000,
+          "retryOnFail": true,
+          "maxTries": 2,
+          "waitBetweenTries": 2000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -80,
+        1160
+      ],
+      "id": "4903f4e2-7baa-469e-958c-7e87772101ab",
+      "name": "HTTP - OpenAI Treat Transcript"
+    },
+    {
+      "parameters": {
+        "jsCode": "const resp = $input.first().json || {};\nconst base = $('Code - Normalize Treatment').first().json;\nlet rawContent = '';\n\n// Handle ALL response shapes\nif (resp.choices?.[0]?.message?.content) {\n  rawContent = resp.choices[0].message.content;\n} else if (resp.treated_transcript) {\n  rawContent = typeof resp.treated_transcript === 'string' ? resp.treated_transcript : JSON.stringify(resp);\n} else if (resp.response?.treated_transcript) {\n  rawContent = JSON.stringify(resp.response);\n} else if (resp.data?.treated_transcript) {\n  rawContent = JSON.stringify(resp.data);\n} else if (resp.output) {\n  rawContent = typeof resp.output === 'string' ? resp.output : JSON.stringify(resp.output);\n} else {\n  rawContent = JSON.stringify(resp);\n}\n\nlet parsed;\ntry { parsed = JSON.parse(rawContent); } catch (e) { parsed = { treated_transcript: rawContent }; }\n\nconst result = {\n  status: parsed.status || 'completed',\n  success: parsed.success !== false,\n  meeting_id: base.meeting_id,\n  project_name: base.project_name,\n  treated_transcript: parsed.treated_transcript || base.transcript || '',\n  summary: parsed.summary || '',\n  segments: parsed.segments || [],\n  requirements_candidates: parsed.requirements_candidates || [],\n  decisions: parsed.decisions || [],\n  action_items: parsed.action_items || [],\n  unclear_items: parsed.unclear_items || [],\n  raw_response: resp,\n  treatment_mode: parsed.treated_transcript ? 'ai' : 'local_fallback'\n};\n\n// If parsing completely failed, return fallback error\nif (!parsed.treated_transcript && !parsed.summary) {\n  return [{\n    json: {\n      success: false,\n      status: 'error',\n      error_code: 'AI_TREATMENT_PARSE_FAILED',\n      treatment_mode: 'local_fallback',\n      message: 'AI treatment failed. Local fallback used.',\n      treated_transcript: base.transcript || '',\n      raw_response: resp,\n      ...result\n    }\n  }];\n}\n\nreturn [{ json: result }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        160,
+        1160
+      ],
+      "id": "bda90c9d-229c-4e05-85b0-6d7806767eeb",
+      "name": "Code - Extract Treatment Result"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        400,
+        1160
+      ],
+      "id": "2f854adb-8478-4a82-b4d3-0b0110aaccd3",
+      "name": "Respond - Treatment Result"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -80,
+        1400
+      ],
+      "id": "e412a81a-6a79-4eda-b273-84da05797182",
+      "name": "Respond - Treatment Invalid"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "recall-realtime-transcript",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -900,
+        1100
+      ],
+      "id": "wh-realtime-20686ab65e43",
+      "name": "Webhook - Recall Realtime Transcript"
+    },
+    {
+      "parameters": {
+        "jsCode": "const incoming = $input.first().json || {};\nconst body = incoming.body ?? incoming;\n\nfunction stableHash(input) {\n  let hash = 0;\n  for (let i = 0; i < input.length; i++) {\n    const char = input.charCodeAt(i);\n    hash = ((hash << 5) - hash) + char;\n    hash = hash & hash;\n  }\n  return 'seg_' + Math.abs(hash).toString(16).padStart(8, '0');\n}\n\nconst bot_id = body.bot_id || body.botId || body.id || '';\nconst meeting_id = body.meeting_id || body.meetingId || bot_id;\nconst event_type = body.event_type || body.event || body.type || 'transcript.data';\nconst segment = body.data || body.segment || body;\n\nconst speaker_name = segment?.speaker || segment?.speaker_name || segment?.participant?.name || segment?.name || body.speaker || 'Speaker';\nconst speaker_id = segment?.speaker_id || segment?.participant?.id || speaker_name.replace(/\\s+/g, '_').toLowerCase();\nconst text_raw = segment?.text || segment?.transcript || segment?.data?.text || segment?.content || '';\nconst start_ms = Number(segment?.start_timestamp?.relative || segment?.start_timestamp || segment?.start || segment?.offset || 0) || 0;\nconst end_ms = Number(segment?.end_timestamp?.relative || segment?.end_timestamp || segment?.end || 0) || 0;\nconst words = segment?.words || segment?.data?.words || [];\n\nconst segment_id = stableHash(String(bot_id) + speaker_name + String(start_ms) + text_raw.slice(0, 80));\n\nreturn [{\n  json: {\n    success: true,\n    source: 'recall_realtime_transcript',\n    bot_id: String(bot_id),\n    meeting_id: String(meeting_id),\n    event_type: String(event_type),\n    segment: {\n      segment_id: segment_id,\n      sequence_no: null,\n      speaker_id: speaker_id,\n      speaker_name: speaker_name,\n      start_ms: start_ms,\n      end_ms: end_ms,\n      time: String(Math.floor(start_ms > 10000 ? start_ms / 1000 : start_ms)),\n      text_raw: text_raw,\n      text_clean: text_raw.replace(/\\s+/g, ' ').trim(),\n      language_detected: 'unknown',\n      confidence: null,\n      is_final: false,\n      source: 'recall_realtime',\n      raw_json: segment\n    },\n    raw_event: incoming\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -680,
+        1100
+      ],
+      "id": "code-normalize-realtime-cac868e0fec5",
+      "name": "Code - Normalize Realtime Transcript Event"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -460,
+        1100
+      ],
+      "id": "respond-realtime-fb5f1329e510",
+      "name": "Respond - Realtime Transcript Result"
+    },
+    {
+      "parameters": {
+        "jsCode": "const envelope = $input.first().json || {};\nconst req = $('Code - Normalize Transcript').first().json || {};\n\n// ── HTTP error detection from GET transcript list ──────────────────────────\nconst httpStatus = envelope.statusCode || envelope.status_code ||\n  (typeof envelope.status === 'number' ? envelope.status : 0);\nif (httpStatus >= 400 || (envelope.error && !envelope.results) ||\n    (envelope.detail && !envelope.results)) {\n  const detail = envelope.detail || envelope.error?.message || envelope.error || 'Recall API error';\n  const sc = httpStatus || '?';\n  return [{ json: {\n    success: false,\n    status: 'error',\n    error_code: 'RECALL_LIST_HTTP_' + sc,\n    message: 'Recall.ai transcript list returned HTTP ' + sc + ': ' + detail,\n    fix_hint: sc === 401 ? 'API key or region mismatch. Check Recall.ai dashboard.' :\n              sc === 404 ? 'Bot not found or wrong region.' :\n              sc === 429 ? 'Rate limited. Wait 30s and retry.' :\n              'Check n8n execution logs.',\n    retryable: [429, 500, 502, 503].includes(Number(sc)),\n    bot_id: req.bot_id,\n    region: req.region,\n    raw_response: envelope\n  }}];\n}\n\n// ── Normalise transcript list response ────────────────────────────────────\nconst raw = envelope.results || envelope.body?.results || envelope.data?.results ||\n            envelope.response?.results || envelope.result?.results || [];\n\nconsole.log(\"TRANSCRIPT LIST RESULTS COUNT:\", raw.length);\n\nif (!Array.isArray(raw) || raw.length === 0) {\n  return [{ json: {\n    success: true,\n    status: 'no_results',\n    message: 'No transcript results found for this bot yet.',\n    retry_after_seconds: 15,\n    bot_id: req.bot_id,\n    region: req.region,\n    raw_transcript_list: []\n  }}];\n}\n\n// ── Find best 'done' transcript with download_url ─────────────────────────\nlet targetTranscript = null;\nfor (const t of raw) {\n  const statusCode = t?.status?.code || '';\n  if (statusCode === 'done' && t?.data?.download_url) {\n    if (!targetTranscript || new Date(t.created_at) > new Date(targetTranscript.created_at)) {\n      targetTranscript = t;\n    }\n  }\n}\n\nif (!targetTranscript) {\n  const hasProcessing = raw.some(t => {\n    const sc = t?.status?.code || '';\n    return ['processing', 'generating', 'pending', 'started', 'in_progress'].includes(sc);\n  });\n  if (hasProcessing) {\n    return [{ json: {\n      success: true,\n      status: 'not_ready',\n      message: 'Transcript is being generated. Try again shortly.',\n      retry_after_seconds: 15,\n      bot_id: req.bot_id,\n      region: req.region,\n      raw_results_count: raw.length,\n      raw_transcript_list: raw\n    }}];\n  }\n  // No done transcript but also no processing ones\n  const hasMissing = raw.some(t => t?.status?.code === 'done' && !t?.data?.download_url);\n  return [{ json: {\n    success: true,\n    status: hasMissing ? 'no_done_transcript' : 'no_results',\n    message: hasMissing\n      ? 'Transcript exists but no completed downloadable JSON found yet.'\n      : 'No transcript results found for this bot yet.',\n    retry_after_seconds: 15,\n    bot_id: req.bot_id,\n    region: req.region,\n    raw_results_count: raw.length,\n    raw_transcript_list: raw\n  }}];\n}\n\nconst downloadUrl = targetTranscript.data.download_url;\nconst transcriptId = targetTranscript.id;\nconsole.log(\"TARGET TRANSCRIPT:\", transcriptId);\nconsole.log(\"DOWNLOAD URL (first 80):\", (downloadUrl || '').slice(0, 80));\n\nreturn [{ json: {\n  success: true,\n  status: 'done',\n  download_url: downloadUrl,\n  transcript_id: transcriptId,\n  bot_id: req.bot_id,\n  region: req.region,\n  transcript_created_at: targetTranscript.created_at,\n  raw_results_count: raw.length,\n  raw_transcript_list: raw\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        440
+      ],
+      "id": "code-extract-download-url",
+      "name": "Code - Extract Transcript URL"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.download_url }}",
+        "options": {
+          "redirect": {
+            "redirect": true
+          },
+          "response": {
+            "responseFormat": "text"
+          },
+          "timeout": 120000,
+          "retryOnFail": true,
+          "maxTries": 2,
+          "waitBetweenTries": 2000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        220,
+        440
+      ],
+      "id": "http-download-transcript-s3",
+      "name": "HTTP - Download Transcript S3",
+      "continueOnFail": true
+    }
+  ],
+  "connections": {
+    "Webhook - Recall Start": {
+      "main": [
+        [
+          {
+            "node": "Code - Normalize Start",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Normalize Start": {
+      "main": [
+        [
+          {
+            "node": "IF - Valid Start",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Valid Start": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Create Recall Bot",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond - Start Invalid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Create Recall Bot": {
+      "main": [
+        [
+          {
+            "node": "Code - Normalize Create Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Normalize Create Result": {
+      "main": [
+        [
+          {
+            "node": "Respond - Start Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Recall Status": {
+      "main": [
+        [
+          {
+            "node": "Code - Normalize Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Normalize Status": {
+      "main": [
+        [
+          {
+            "node": "IF - Valid Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Valid Status": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Retrieve Recall Bot",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond - Status Invalid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Retrieve Recall Bot": {
+      "main": [
+        [
+          {
+            "node": "Code - Normalize Status Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Normalize Status Result": {
+      "main": [
+        [
+          {
+            "node": "Respond - Status Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Recall Transcript": {
+      "main": [
+        [
+          {
+            "node": "Code - Normalize Transcript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Normalize Transcript": {
+      "main": [
+        [
+          {
+            "node": "IF - Valid Transcript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Valid Transcript": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Get Recall Transcript",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond - Transcript Invalid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Get Recall Transcript": {
+      "main": [
+        [
+          {
+            "node": "Code - Extract Transcript URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Convert Transcript to TXT": {
+      "main": [
+        [
+          {
+            "node": "Respond - Transcript Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Recall Leave": {
+      "main": [
+        [
+          {
+            "node": "Code - Normalize Leave",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Normalize Leave": {
+      "main": [
+        [
+          {
+            "node": "IF - Valid Leave",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Valid Leave": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Leave Recall Bot",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond - Leave Invalid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Leave Recall Bot": {
+      "main": [
+        [
+          {
+            "node": "Code - Normalize Leave Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Normalize Leave Result": {
+      "main": [
+        [
+          {
+            "node": "Respond - Leave Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Treat Transcript": {
+      "main": [
+        [
+          {
+            "node": "Code - Normalize Treatment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Normalize Treatment": {
+      "main": [
+        [
+          {
+            "node": "IF - Valid Treatment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Valid Treatment": {
+      "main": [
+        [
+          {
+            "node": "HTTP - OpenAI Treat Transcript",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond - Treatment Invalid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - OpenAI Treat Transcript": {
+      "main": [
+        [
+          {
+            "node": "Code - Extract Treatment Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Extract Treatment Result": {
+      "main": [
+        [
+          {
+            "node": "Respond - Treatment Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Recall Realtime Transcript": {
+      "main": [
+        [
+          {
+            "node": "Code - Normalize Realtime Transcript Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Normalize Realtime Transcript Event": {
+      "main": [
+        [
+          {
+            "node": "Respond - Realtime Transcript Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Extract Transcript URL": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Download Transcript S3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Download Transcript S3": {
+      "main": [
+        [
+          {
+            "node": "Code - Convert Transcript to TXT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2026-05-19T00:00:00.000Z",
+  "versionId": "royalsoft-recall-proxy-v1"
+}

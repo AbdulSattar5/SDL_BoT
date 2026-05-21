@@ -1,0 +1,1736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>RoyalSoft Recall SDLC Lifecycle Dashboard</title><style>
+:root{--bg:#0a0a0f;--bg2:#111118;--surface:#16161f;--border:#1e1e2a;--border2:#2a2a3a;--text:#d4d4e0;--dim:#787890;--muted:#585870;--primary:#4f8aff;--purple:#8b5cf6;--success:#22c55e;--warning:#f59e0b;--danger:#ef4444;--yellow: #eab308;--yellowGlow: rgba(234,179,8,.08);--radius:10px;--radius-sm:6px;--space:10px;--font:'Inter','system-ui','Segoe UI',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:13px;line-height:1.5;min-height:100vh}
+a{color:var(--primary);text-decoration:none}
+h1,h2,h3,h4{font-weight:600;letter-spacing:-.01em}
+button{font-family:var(--font);cursor:pointer;border:none;outline:none;font-size:11px;font-weight:600;padding:7px 14px;border-radius:var(--radius-sm);transition:all .15s ease;background:var(--surface);color:var(--text)}
+button:hover{filter:brightness(1.15);transform:translateY(-1px)}
+button:active{transform:translateY(0)}
+button:disabled{opacity:.4;cursor:not-allowed;filter:none;transform:none}
+.btn{background:var(--surface);border:1px solid var(--border);color:var(--text)}
+.btn.purple{background:var(--purple);border-color:var(--purple);color:#fff}
+.btn.success{background:var(--success);border-color:var(--success);color:#fff}
+.btn.danger{background:var(--danger);border-color:var(--danger);color:#fff}
+.btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+.btn.ghost{background:transparent;border:1px solid var(--border);color:var(--dim)}
+.btn.ghost:hover{background:var(--surface);color:var(--text)}
+input,textarea,select{font-family:var(--font);font-size:12px;background:var(--bg2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);padding:7px 10px;width:100%;outline:none;transition:border-color .15s ease}
+input:focus,textarea:focus,select:focus{border-color:var(--primary)}
+textarea{resize:vertical;min-height:60px}
+textarea.mono{font-family:'JetBrains Mono','Fira Code','Consolas',monospace;font-size:11px;line-height:1.6}
+pre.raw{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;font-size:10px;line-height:1.6;overflow:auto;max-height:40vh;white-space:pre-wrap;font-family:'JetBrains Mono','Consolas',monospace;color:var(--dim)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px}
+.pretitle{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--dim);margin-bottom:8px}
+.metric{padding:6px 0}
+.metric-k{font-size:10px;color:var(--muted);margin-bottom:2px}
+.metric-v{font-size:14px;font-weight:700;color:var(--text)}
+.metric-v.ok{color:var(--success)}
+.metric-v.err{color:var(--danger)}
+.metric-v.warn{color:var(--warning)}
+.metric-v.info{color:var(--primary)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.split-actions{display:flex;gap:6px;flex-wrap:wrap}
+.split-actions>*{flex:1;min-width:0}
+.mt-4{margin-top:4px}
+.mt-8{margin-top:8px}
+.mt-12{margin-top:12px}
+.text-sm{font-size:11px}
+.text-muted{color:var(--muted)}
+.hint{padding:8px 10px;border-radius:var(--radius-sm);font-size:11px;line-height:1.5;margin-top:8px}
+.hint.error{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:var(--danger)}
+.hint.warning{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);color:var(--warning)}
+.hint.success{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);color:var(--success)}
+.hint.info{background:rgba(79,138,255,.08);border:1px solid rgba(79,138,255,.2);color:var(--primary)}
+.empty-state{text-align:center;padding:24px;color:var(--muted)}
+.empty-state .icon{font-size:28px;margin-bottom:10px}
+.empty-state .label{font-size:13px;font-weight:600;color:var(--dim);margin-bottom:4px}
+.empty-state .desc{font-size:11px;color:var(--muted)}
+.debug-highlight{background:rgba(79,138,255,.04);border-left:2px solid var(--primary);padding:6px 8px;margin-bottom:4px;font-size:11px;line-height:1.5;border-radius:0 var(--radius-sm) var(--radius-sm) 0}
+.debug-highlight:hover{background:rgba(79,138,255,.08)}
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;text-transform:uppercase;letter-spacing:.5px}
+.badge.muted{background:rgba(120,120,144,.12);color:var(--dim)}
+.badge.sm{font-size:9px;padding:2px 6px}
+.badge.purple{background:rgba(139,92,246,.15);color:var(--purple)}
+.badge.success{background:rgba(34,197,94,.12);color:var(--success)}
+.transcript-line{display:grid;grid-template-columns:60px 120px 1fr;gap:8px;padding:6px 8px;border-bottom:1px solid var(--border);font-size:12px;line-height:1.5;align-items:start}
+.transcript-line .time{font-family:'JetBrains Mono','Consolas',monospace;font-size:10px;color:var(--muted);white-space:nowrap}
+.transcript-line .speaker{font-weight:600;color:var(--primary);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.transcript-line .text{color:var(--text);line-height:1.6}
+.fade-in{animation:fade-in .3s ease}
+@keyframes fade-in{0%{opacity:0}100%{opacity:1}}
+.waiting-banner{background:var(--yellowGlow);border:1px solid rgba(234,179,8,.25);border-radius:var(--radius);padding:10px 14px;margin:10px 14px;font-size:12px;color:var(--yellow);display:flex;align-items:center;gap:10px;animation:fade-in .3s ease}
+.segment-sample{border-left:2px solid var(--border2);padding:6px 8px;margin-bottom:4px;font-size:11px;line-height:1.5;border-radius:0 var(--radius-sm) var(--radius-sm) 0}
+.segment-sample:hover{background:var(--surface)}
+</style></head>
+<body>
+
+<div id="app" style="display:flex;flex-direction:column;min-height:100vh">
+
+<!-- Top bar -->
+<header style="display:flex;align-items:center;gap:12px;padding:var(--space) 16px;background:var(--bg2);border-bottom:1px solid var(--border)">
+  <span style="font-weight:700;font-size:14px">🎙 Recall SDLC</span>
+  <span class="badge muted sm">Lifecycle Dashboard</span>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+    <span id="lifeBadge" class="badge muted sm">⏳ Idle</span>
+    <span id="statusLabel" style="font-size:11px;color:var(--dim)">Ready</span>
+  </div>
+</header>
+
+<!-- Lifecycle visual -->
+<div id="life" style="display:flex;gap:4px;padding:10px 16px;background:var(--bg2);border-bottom:1px solid var(--border);overflow-x:auto">
+  <div class="step" data-step="join" style="flex:1;text-align:center;padding:6px;border-radius:var(--radius-sm);font-size:10px;font-weight:600;color:var(--muted);background:var(--surface);border:1px solid var(--border);transition:all .15s ease">1. Join</div>
+  <div class="step" data-step="record" style="flex:1;text-align:center;padding:6px;border-radius:var(--radius-sm);font-size:10px;font-weight:600;color:var(--muted);background:var(--surface);border:1px solid var(--border);transition:all .15s ease">2. Record</div>
+  <div class="step" data-step="json" style="flex:1;text-align:center;padding:6px;border-radius:var(--radius-sm);font-size:10px;font-weight:600;color:var(--muted);background:var(--surface);border:1px solid var(--border);transition:all .15s ease">3. JSON</div>
+  <div class="step" data-step="treat" style="flex:1;text-align:center;padding:6px;border-radius:var(--radius-sm);font-size:10px;font-weight:600;color:var(--muted);background:var(--surface);border:1px solid var(--border);transition:all .15s ease">4. Treat</div>
+  <div class="step" data-step="sdlc" style="flex:1;text-align:center;padding:6px;border-radius:var(--radius-sm);font-size:10px;font-weight:600;color:var(--muted);background:var(--surface);border:1px solid var(--border);transition:all .15s ease">5. SDLC</div>
+  <div class="step" data-step="ended" style="flex:1;text-align:center;padding:6px;border-radius:var(--radius-sm);font-size:10px;font-weight:600;color:var(--muted);background:var(--surface);border:1px solid var(--border);transition:all .15s ease">6. Done</div>
+</div>
+
+<!-- Status bar -->
+<div id="statusBar" style="display:flex;align-items:center;gap:10px;padding:8px 16px;background:var(--surface);border-bottom:1px solid var(--border)">
+  <span id="statusIcon" style="font-size:18px">🔎</span>
+  <div>
+    <div id="statusTitle" style="font-size:12px;font-weight:600">Bot status: idle</div>
+    <div id="statusDesc" style="font-size:10px;color:var(--muted)">Waiting for action.</div>
+  </div>
+  <button id="btnDismissStatus" class="btn ghost" onclick="dismissStatus()" style="margin-left:auto;padding:4px 8px;font-size:10px">✕</button>
+</div>
+
+<div style="display:flex;flex:1">
+  <!-- Sidebar -->
+  <aside style="width:320px;min-width:320px;background:var(--bg2);border-right:1px solid var(--border);padding:12px;overflow-y:auto">
+    <div class="card"><div class="pretitle">n8n Proxy Endpoints</div>
+      <div class="field" style="margin-bottom:6px"><div class="label" style="font-size:10px;color:var(--muted);margin-bottom:2px">Start Bot <span>POST /recall-start</span></div><input id="epStart" class="inp mono" value="https://royalsoft.app.n8n.cloud/webhook/recall-start" placeholder="https://your-n8n/webhook/recall-start"></div>
+      <div class="field" style="margin-bottom:6px"><div class="label" style="font-size:10px;color:var(--muted);margin-bottom:2px">Status <span>POST /recall-status</span></div><input id="epStatus" class="inp mono" value="https://royalsoft.app.n8n.cloud/webhook/recall-status" placeholder="https://your-n8n/webhook/recall-status"></div>
+      <div class="field" style="margin-bottom:6px"><div class="label" style="font-size:10px;color:var(--muted);margin-bottom:2px">Leave Bot <span>POST /recall-leave</span></div><input id="epLeave" class="inp mono" value="https://royalsoft.app.n8n.cloud/webhook/recall-leave" placeholder="https://your-n8n/webhook/recall-leave"></div>
+      <div class="field" style="margin-bottom:6px"><div class="label" style="font-size:10px;color:var(--muted);margin-bottom:2px">Transcript <span>POST /recall-transcript</span></div><input id="epTranscript" class="inp mono" value="https://royalsoft.app.n8n.cloud/webhook/recall-transcript" placeholder="https://your-n8n/webhook/recall-transcript"></div>
+      <div class="field" style="margin-bottom:6px"><div class="label" style="font-size:10px;color:var(--muted);margin-bottom:2px">AI Language Treatment <span>optional</span></div><input id="epTreat" class="inp mono" value="https://royalsoft.app.n8n.cloud/webhook/recall-treat-transcript" placeholder="https://your-n8n/webhook/recall-treat-transcript"></div>
+      <div class="field" style="margin-bottom:6px"><div class="label" style="font-size:10px;color:var(--muted);margin-bottom:2px">Realtime Transcript <span>optional</span></div><input id="epRealtimeTranscript" class="inp mono" value="https://royalsoft.app.n8n.cloud/webhook/recall-realtime-transcript" placeholder="https://your-n8n/webhook/recall-realtime-transcript"></div>
+      <div class="field" style="margin-bottom:6px"><div class="label" style="font-size:10px;color:var(--muted);margin-bottom:2px">SDLC / TMS <span>POST /fireflies</span></div><input id="epSdlc" class="inp mono" value="https://royalsoft.app.n8n.cloud/webhook/fireflies" placeholder="https://your-n8n/webhook/fireflies"></div>
+    </div>
+    <div class="card mt-8"><div class="pretitle">Meeting Config</div>
+      <div class="field" style="margin-bottom:6px"><div class="label" style="font-size:10px;color:var(--muted);margin-bottom:2px">Google Meet URL <span class="required">*</span></div><input id="meetingUrl" class="inp" placeholder="https://meet.google.com/xxx-xxxx-xxx"></div>
+      <div class="field" style="margin-bottom:6px"><div class="label" style="font-size:10px;color:var(--muted);margin-bottom:2px">Recall Region</div><select id="region" class="sel"><option value="ap-northeast-1">🇯🇵 ap-northeast-1 (Tokyo)</option><option value="ap-southeast-1">🇸🇬 ap-southeast-1 (Singapore)</option><option value="us-west-2">🇺🇸 us-west-2 (Oregon)</option><option value="us-east-1">🇺🇸 us-east-1 (N. Virginia)</option><option value="eu-central-1">🇩🇪 eu-central-1 (Frankfurt)</option></select></div>
+      <div class="field" style="margin-bottom:6px"><div class="label" style="font-size:10px;color:var(--muted);margin-bottom:2px">Bot Name</div><input id="botName" class="inp" value="RoyalSoft SDLC Recorder"></div>
+      <div class="field" style="margin-bottom:6px"><div class="label" style="font-size:10px;color:var(--muted);margin-bottom:2px">Project Name</div><input id="projectName" class="inp" value="RoyalSoft TMS"></div>
+      <div class="field" style="margin-bottom:6px"><div class="label" style="font-size:10px;color:var(--muted);margin-bottom:2px">Bot ID <span>(from Join)</span></div><input id="botId" class="inp mono" placeholder="Bot ID from Join Meeting response"></div>
+    </div>
+    <div class="card mt-8"><div class="pretitle">Actions</div>
+      <div class="split-actions"><button class="btn success" onclick="joinMeeting()">▶ Join Meeting</button><button class="btn" onclick="checkStatus()">🔍 Check Status</button></div>
+      <div class="split-actions mt-8"><button class="btn" onclick="fetchTranscript({fromManual:true})">📥 Fetch Transcript</button><button class="btn danger" onclick="leaveBot()">⏹ Leave / End</button></div>
+      <div class="mt-8" style="display:flex;gap:6px;flex-wrap:wrap">
+        <button id="btnStopAutoFetch" class="btn ghost" onclick="stopAutoFetch()" style="display:none;font-size:10px;padding:5px 10px;color:var(--warning);border-color:rgba(234,179,8,.3)">⏹ Stop Auto Fetch</button>
+        <button class="btn ghost" onclick="loadLastBot()" style="font-size:10px;padding:5px 10px">📂 Load Last Bot</button>
+      </div>
+      <div id="autoFetchStatus" style="display:none;font-size:10px;margin-top:6px;padding:6px 8px;background:rgba(234,179,8,.06);border:1px solid rgba(234,179,8,.2);border-radius:4px;color:var(--warning)"></div>
+      <div id="recentBotsPanel" class="mt-8"></div>
+    </div>
+    <div class="card mt-8"><div class="pretitle">Downloads</div>
+      <div class="split-actions"><button class="btn ghost" onclick="downloadRaw()">📄 Raw JSON</button><button class="btn ghost" onclick="downloadTxt()">📄 TXT</button></div>
+      <div class="split-actions mt-8"><button class="btn ghost" onclick="downloadCanonical()">📋 Canonical JSON</button></div>
+    </div>
+    <div class="card mt-8">
+      <div class="pretitle">Overview</div>
+      <div id="overviewContent"><div class="empty-state"><div class="icon">📊</div><div class="label">No Data Yet</div><div class="desc">Status and metrics will appear here.</div></div></div>
+    </div>
+  </aside>
+
+  <!-- Main content area -->
+  <main style="flex:1;padding:12px;overflow-y:auto;display:flex;flex-direction:column">
+    <!-- Tab bar -->
+    <div style="display:flex;gap:2px;background:var(--bg2);border-radius:var(--radius);padding:3px;margin-bottom:10px">
+      <button class="tab" data-tab="transcript" onclick="switchTab('transcript')" style="flex:1;padding:6px 8px;font-size:10px;border-radius:4px;background:var(--surface);border:none;color:var(--text);font-weight:600">📝 Transcript</button>
+      <button class="tab" data-tab="treatment" onclick="switchTab('treatment')" style="flex:1;padding:6px 8px;font-size:10px;border-radius:4px;background:transparent;border:none;color:var(--dim)">🧠 Treatment</button>
+      <button class="tab" data-tab="sdlc" onclick="switchTab('sdlc')" style="flex:1;padding:6px 8px;font-size:10px;border-radius:4px;background:transparent;border:none;color:var(--dim)">📋 SDLC</button>
+      <button class="tab" data-tab="debug" onclick="switchTab('debug')" style="flex:1;padding:6px 8px;font-size:10px;border-radius:4px;background:transparent;border:none;color:var(--dim)">🔧 Debug</button>
+      <button class="tab" data-tab="direct" onclick="switchTab('direct')" style="flex:1;padding:6px 8px;font-size:10px;border-radius:4px;background:transparent;border:none;color:var(--dim)">🔌 Direct Test</button>
+      <button class="tab" data-tab="n8n" onclick="switchTab('n8n')" style="flex:1;padding:6px 8px;font-size:10px;border-radius:4px;background:transparent;border:none;color:var(--dim)">🔌 n8n Log</button>
+    </div>
+
+    <!-- Transcript Tab -->
+    <section id="panel-transcript" class="panel">
+      <div class="split-actions"><button class="btn ghost" onclick="fetchTranscript()">📥 Fetch JSON</button><button class="btn success" onclick="buildTranscript()">📝 Build Clean</button></div>
+      <div class="mt-12"></div>
+      <div id="qualityPanel"></div>
+      <div id="cleanTranscriptView" class="mt-8"><div class="empty-state"><div class="icon">📝</div><div class="label">No Clean Transcript</div><div class="desc">No transcript available yet. Fetch transcript first.</div></div></div>
+      <div class="mt-8" id="transcriptView" class="empty-state" style="display:none"><div class="icon">📝</div><div class="label">No Transcript Yet</div><div class="desc">Transcript will appear here after Recall.ai returns transcript JSON.</div></div>
+      <div class="mt-8" id="canonicalSegmentsView"></div>
+    </section>
+
+    <!-- Treatment Tab -->
+    <section id="panel-treatment" class="panel" style="display:none">
+      <div class="card" style="background:var(--bg2);border-color:var(--border2);padding:14px">
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:4px">
+          <button class="btn purple" onclick="aiTreatTranscript()" id="btnAiTreat">🧠 AI Treat via n8n</button>
+          <button class="btn success" onclick="localTreatTranscript()">⚡ Local Roman Urdu → English</button>
+          <select id="treatmentSourceLang" class="sel" style="width:auto;min-width:100px;flex:1"><option value="ur">🇵🇰 Urdu</option><option value="hi">🇮🇳 Hindi</option><option value="pa">🇵🇰 Punjabi</option><option value="mixed">🌐 Mixed (Auto)</option></select>
+        </div>
+        <div class="flex-row" style="gap:8px;margin-top:8px">
+          <span class="badge muted sm" id="treatmentStats">📊 No treatment yet</span>
+          <button class="btn ghost" onclick="toggleTreatmentView()" id="btnToggleView" style="font-size:10px;padding:5px 8px;display:none">🔄 Compare Original</button>
+          <button class="btn ghost" onclick="resetTreatedText()" style="font-size:10px;padding:5px 8px">↩ Reset to Original</button>
+        </div>
+      </div>
+      <div id="treatmentSummaryCards" class="mt-8"></div>
+      <div class="mt-8"></div>
+      <div class="pretitle" id="treatmentTitle">Editable Final Transcript</div>
+      <textarea id="treatedText" class="editable" placeholder="Treated English / Roman English transcript will appear here. Edit freely before SDLC extraction."></textarea>
+      <div id="treatmentCompare" style="display:none" class="mt-8"><div class="pretitle">Original Transcript (before treatment)</div><pre class="raw" id="treatmentOriginalView" style="max-height:30vh;background:rgba(234,179,8,.04);border-color:rgba(234,179,8,.15);color:var(--yellow)"></pre></div>
+    </section>
+
+    <!-- SDLC Tab -->
+    <section id="panel-sdlc" class="panel" style="display:none">
+      <div class="split-actions"><button class="btn success" onclick="buildSdlcPreview()">📋 Build SDLC Preview</button><button class="btn primary" onclick="sendToSdlc()">➡ Send to SDLC n8n</button></div>
+      <div class="mt-12"></div>
+      <div id="approvalGate"></div>
+      <div class="pretitle">Preview & Edit Before Sending</div>
+      <textarea id="sdlcPreview" class="editable mono" placeholder="SDLC input JSON preview -- edit as needed before sending to the n8n workflow."></textarea>
+    </section>
+
+    <!-- Debug Tab -->
+    <section id="panel-debug" class="panel" style="display:none">
+      <div class="pretitle">Debug / Raw JSON</div>
+      <pre class="raw" id="rawBox">Click <b>Fetch Transcript</b> or check status to see raw JSON here.</pre>
+    </section>
+
+    <!-- Direct Test Tab -->
+    <section id="panel-direct" class="panel" style="display:none">
+      <div class="card"><div class="pretitle">🐚 Terminal Command (RECOMMENDED)</div>
+        <div style="font-size:11px;line-height:1.8;margin-bottom:8px">
+          Browser CORS ki wajah se direct API call kaam nahi karega. Terminal mein yeh command run karein:
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;font-family:'JetBrains Mono','Consolas',monospace;font-size:10px;line-height:1.8;overflow-x:auto;white-space:pre-wrap">
+<span style="color:var(--muted)"># ⭐ RECOMMENDED: List transcripts for a bot (TWO-STEP FLOW):</span>
+<span style="color:var(--muted)"># Step 1: Get transcript list with download URL</span>
+<span style="color:var(--primary)">curl -s -H "Authorization: Token <span id="termKey">b4b49ce6a2f3b5e3b02e2335e994c52d456f90cc</span>" "https://ap-northeast-1.recall.ai/api/v1/transcript/?bot=<span id="termBotId" style="color:var(--warning)">BOT_ID_HERE</span>"</span>
+
+<span style="color:var(--muted)"># Step 2: Download actual transcript from S3 URL (copy download_url from Step 1 output)</span>
+<span style="color:var(--dim)">curl -s "DOWNLOAD_URL_FROM_STEP_1"</span>
+
+<span style="color:var(--muted)"># Quick bot status check:</span>
+<span style="color:var(--primary)">curl -s -H "Authorization: Token <span id="termKey2">b4b49ce6a2f3b5e3b02e2335e994c52d456f90cc</span>" "https://ap-northeast-1.recall.ai/api/v1/bot/<span id="termBotId2" style="color:var(--warning)">BOT_ID_HERE</span>/"</span>
+
+<span style="color:var(--muted)"># List all recent bots:</span>
+<span style="color:var(--primary)">curl -s -H "Authorization: Token <span id="termKey3">b4b49ce6a2f3b5e3b02e2335e994c52d456f90cc</span>" "https://ap-northeast-1.recall.ai/api/v1/bot/"</span>
+        </div>
+        <button class="btn ghost mt-8" onclick="copyTerminalCommands()" style="font-size:10px">📋 Copy Commands</button>
+        <div class="hint warning mt-8" style="font-size:10px">⚠ Browser CORS restriction — yeh commands terminal mein run karein (cmd/powershell/bash). Output yahan paste karein to main analysis kar sakta hoon.</div>
+      </div>
+      <div class="card mt-8" style="display:none" id="pasteAnalysisSection">
+        <div class="pretitle">📋 Paste Terminal Output Here</div>
+        <textarea id="pasteOutput" class="inp mono" rows="8" placeholder="curl command ka output yahan paste karein..."></textarea>
+        <button class="btn primary mt-8" onclick="analyzePastedOutput()">🔍 Analyze Pasted Output</button>
+        <div id="pasteAnalysis" class="mt-8"></div>
+      </div>
+      <div id="directTestResult" class="mt-8">
+        <div class="pretitle">Raw Response</div>
+        <pre class="raw" id="directRawBox">Click <b>Test API Direct</b> to see raw JSON response from Recall.ai.</pre>
+      </div>
+      <div id="directTestAnalysis" class="mt-8" style="display:none">
+        <div class="pretitle">Analysis</div>
+        <div id="directAnalysisContent" style="font-size:11px;line-height:1.8"></div>
+      </div>
+    </section>
+
+    <!-- n8n Log Tab -->
+    <section id="panel-n8n" class="panel" style="display:none">
+      <div class="pretitle">n8n Response Log</div>
+      <pre class="raw" id="n8nBox">SDLC / TMS responses will appear here.</pre>
+      <div class="mt-12"><div class="pretitle">Logs</div><div id="logBox" style="font-size:10px;color:var(--dim);line-height:1.8"></div></div>
+    </section>
+  </main>
+</div>
+
+</div>
+
+<script>
+/* ═══════════════════════════════════════
+   Root state
+   ═══════════════════════════════════════ */
+const state = {
+  bot: null,
+  rawBot: null,
+  rawTranscript: null,
+  canonicalSegments: [],
+  cleaningStats: null,
+  qualityScore: null,
+  segments: [],
+  cleanText: '',
+  treatedText: '',
+  treatedSegments: [],
+  treatmentSummary: '',
+  requirementsCandidates: [],
+  decisions: [],
+  actionItems: [],
+  unclearItems: [],
+  treatmentMode: '',
+  originalText: '',
+  treatmentHistory: [],
+  sdlc: null,
+  logs: [],
+  pollTimer: null,
+  isPolling: false,
+  retryCount: 0,
+  transcriptNotReady: false,
+  autoFetchTimer: null,
+  autoFetchAttempt: 0,
+  autoFetchMax: 20,
+  autoFetchActive: false,
+  recentBots: []
+};
+
+const DEFAULT_ENDPOINTS = {
+  epStart: 'https://royalsoft.app.n8n.cloud/webhook/recall-start',
+  epStatus: 'https://royalsoft.app.n8n.cloud/webhook/recall-status',
+  epLeave: 'https://royalsoft.app.n8n.cloud/webhook/recall-leave',
+  epTranscript: 'https://royalsoft.app.n8n.cloud/webhook/recall-transcript',
+  epTreat: 'https://royalsoft.app.n8n.cloud/webhook/recall-treat-transcript',
+  epRealtimeTranscript: 'https://royalsoft.app.n8n.cloud/webhook/recall-realtime-transcript',
+  epSdlc: 'https://royalsoft.app.n8n.cloud/webhook/fireflies'
+};
+
+/* ═══════════════════════════════════════
+   Helpers
+   ═══════════════════════════════════════ */
+function $(id) { return document.getElementById(id); }
+function val(id) { const e = $(id); return e ? e.value.trim() : ''; }
+function setVal(id, v) { const e = $(id); if (e) e.value = v; }
+function pretty(o) { try { return JSON.stringify(o, null, 2); } catch(e) { return String(o); } }
+function download(name, content, type) {
+  const blob = new Blob([content], { type: type || 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function esc(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+function log(color, msg) {
+  const time = new Date().toLocaleTimeString();
+  const colors = { green: '#22c55e', yellow: '#eab308', red: '#ef4444', blue: '#4f8aff', white: '#d4d4e0' };
+  const el = document.getElementById('logBox');
+  if (!el) return;
+  const c = colors[color] || colors.white;
+  el.innerHTML += '<span style="color:' + c + '">[' + time + '] ' + esc(msg) + '</span><br>';
+  state.logs.push({ time, color, msg });
+  el.scrollTop = el.scrollHeight;
+}
+
+function toast(type, title, msg) {
+  const colors = { success: '#22c55e', error: '#ef4444', warning: '#eab308', info: '#4f8aff' };
+  const c = colors[type] || colors.info;
+  log(type === 'error' ? 'red' : type === 'warning' ? 'yellow' : type === 'success' ? 'green' : 'blue', title + ': ' + msg);
+}
+
+function deepFind(obj, keys) {
+  for (const k of keys) {
+    if (obj && obj[k]) return obj[k];
+  }
+  return null;
+}
+
+function setStatus(icon, title, desc, stage) {
+  const iconEl = document.getElementById('statusIcon');
+  const titleEl = document.getElementById('statusTitle');
+  const descEl = document.getElementById('statusDesc');
+  const badgeEl = document.getElementById('statusLabel');
+  if (iconEl) iconEl.textContent = icon;
+  if (titleEl) titleEl.textContent = title;
+  if (descEl) descEl.innerHTML = desc || '';
+  if (badgeEl) badgeEl.textContent = stage || title;
+}
+
+function setLife(step, reset) {
+  const steps = document.querySelectorAll('#life .step');
+  let found = false;
+  steps.forEach(s => {
+    const ds = s.getAttribute('data-step');
+    if (ds === step) found = true;
+    if (found) {
+      s.style.background = 'var(--primary)';
+      s.style.borderColor = 'var(--primary)';
+      s.style.color = '#fff';
+    } else {
+      s.style.background = 'var(--surface)';
+      s.style.borderColor = 'var(--border)';
+      s.style.color = 'var(--muted)';
+    }
+  });
+}
+
+function dismissStatus() {
+  setStatus('\\u2705', 'Dismissed', '', '');
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
+  document.querySelectorAll('.tab').forEach(t => {
+    if (t.getAttribute('data-tab') === tab) {
+      t.style.background = 'var(--surface)';
+      t.style.color = 'var(--text)';
+    } else {
+      t.style.background = 'transparent';
+      t.style.color = 'var(--dim)';
+    }
+  });
+  const panel = document.getElementById('panel-' + tab);
+  if (panel) panel.style.display = 'block';
+}
+
+function saveConfig() {
+  const keys = ['epStart','epStatus','epLeave','epTranscript','epTreat','epRealtimeTranscript','epSdlc','meetingUrl','region','botName','projectName'];
+  const cfg = {};
+  keys.forEach(k => { const e = $(k); if (e) cfg[k] = e.value; });
+  try { localStorage.setItem('recallDashboardConfig', JSON.stringify(cfg)); } catch(e) {}
+}
+
+function loadConfig() {
+  try {
+    const raw = localStorage.getItem('recallDashboardConfig');
+    if (!raw) return;
+    const cfg = JSON.parse(raw);
+    Object.keys(cfg).forEach(k => { const e = $(k); if (e) e.value = cfg[k]; });
+  } catch(e) {}
+}
+
+function detectPlatform() {
+  const ua = navigator.userAgent;
+  log('blue', 'Platform: ' + (ua.includes('Windows') ? 'Windows' : ua.includes('Mac') ? 'macOS' : ua.includes('Linux') ? 'Linux' : 'Unknown'));
+}
+
+function basePayload() {
+  return {
+    meeting_url: val('meetingUrl'),
+    bot_id: val('botId'),
+    region: val('region') || 'ap-northeast-1',
+    bot_name: val('botName') || 'RoyalSoft SDLC Recorder',
+    project_name: val('projectName') || 'RoyalSoft TMS',
+    meeting_title: (val('projectName') || 'RoyalSoft TMS') + ' SDLC Meeting',
+    language_code: val('languageCode') || 'auto',
+    transcription_mode: 'prioritize_accuracy',
+    realtime_transcript_webhook: val('epRealtimeTranscript') || 'https://royalsoft.app.n8n.cloud/webhook/recall-realtime-transcript',
+    enable_realtime_transcript: true,
+    enable_canonical_segments: true
+  };
+}
+
+async function postJSON(url, body) {
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  return resp.json();
+}
+
+/* ═══════════════════════════════════════
+   Bot Status Labels Map (2D)
+   ═══════════════════════════════════════ */
+const STATUS_LABELS = {
+  'created': { icon: '✅', label: 'Bot Created', sub: 'Bot created. Waiting to join the meeting.', stage: 'Bot Created' },
+  'joining_call': { icon: '🚀', label: 'Joining Meeting', sub: 'Bot is joining the meeting now.', stage: 'Joining' },
+  'in_waiting_room': { icon: '⏳', label: '⚠ Waiting Room', sub: 'Open Google Meet and admit <b>RoyalSoft SDLC Recorder</b>.', stage: 'Waiting' },
+  'waiting': { icon: '⏳', label: 'Waiting Room', sub: 'Open Google Meet and admit <b>RoyalSoft SDLC Recorder</b>.', stage: 'Waiting' },
+  'in_call_not_recording': { icon: '🔄', label: 'In Call, Not Recording Yet', sub: 'Waiting for Recall.ai to start transcription.', stage: 'Connecting' },
+  'connecting': { icon: '🔄', label: 'Connecting', sub: 'Bot is connecting to the call.', stage: 'Connecting' },
+  'in_call_recording': { icon: '🔴', label: 'Recording Started', sub: 'Recall.ai is collecting meeting data. Speak clearly.', stage: 'Recording' },
+  'recording': { icon: '🔴', label: 'Recording', sub: 'Recall.ai is transcribing the meeting.', stage: 'Recording' },
+  'call_ended': { icon: '🏁', label: 'Meeting Ended', sub: 'Fetching final transcript JSON from Recall.ai.', stage: 'Ended' },
+  'done': { icon: '🏁', label: 'Complete', sub: 'Meeting completed. Transcript ready for fetch.', stage: 'Ended' },
+  'ready': { icon: '🏁', label: 'Ready', sub: 'Transcript data ready to fetch.', stage: 'Ended' },
+  'failed': { icon: '❌', label: 'Failed', sub: 'An error occurred during processing.', stage: 'Error' },
+  'transcript_processing': { icon: '⏳', label: 'Transcript Processing', sub: 'Recall.ai is generating transcript.', stage: 'Processing' },
+  'transcript_ready': { icon: '📝', label: 'Transcript Ready', sub: 'Transcript ready. Fetch it now.', stage: 'Transcript Ready' },
+  'treatment_ready': { icon: '🧠', label: 'Treatment Ready', sub: 'Language treatment applied.', stage: 'Treatment Ready' },
+  'sdlc_ready': { icon: '📋', label: 'SDLC Ready', sub: 'SDLC preview built and ready for approval.', stage: 'SDLC Ready' },
+  'approved': { icon: '✅', label: 'Approved', sub: 'Transcript has been approved for TMS.', stage: 'Approved' },
+  'sent_to_tms': { icon: '➡', label: 'Sent to TMS', sub: 'Data sent to TMS workflow.', stage: 'Sent' },
+  'fatal': { icon: '❌', label: 'Failed', sub: 'Check the Raw JSON tab and n8n logs for details. Bots may expire after 24h.', stage: 'Error' },
+  'error': { icon: '❌', label: 'Error', sub: 'An error occurred. Check Raw JSON tab.', stage: 'Error' },
+  'expired': { icon: '⏰', label: 'Expired', sub: 'Bot ID has expired. Create a new bot.', stage: 'Expired' }
+};
+
+function showWaitingBanner() {
+  const existing = document.getElementById('waitingBanner');
+  if (existing) return;
+  const banner = document.createElement('div');
+  banner.id = 'waitingBanner';
+  banner.className = 'waiting-banner';
+  banner.innerHTML = '<span style="font-size:18px">⚠</span><span><b>Bot is waiting.</b> Please admit <b>RoyalSoft SDLC Recorder</b> in Google Meet.</span><button class="btn ghost" onclick="this.parentElement.remove()" style="margin-left:auto;font-size:10px;padding:4px 8px">Dismiss</button>';
+  const life = document.getElementById('life');
+  life.parentNode.insertBefore(banner, life.nextSibling);
+}
+
+function hideWaitingBanner() {
+  const banner = document.getElementById('waitingBanner');
+  if (banner) banner.remove();
+}
+
+function mapStatus(st) {
+  const info = STATUS_LABELS[st];
+  if (info) {
+    const isWaiting = st === 'in_waiting_room' || st === 'waiting';
+    if (isWaiting) { setLife('waiting'); showWaitingBanner(); }
+    else { hideWaitingBanner(); }
+    if (['in_call_recording','recording'].includes(st)) setLife('record');
+    else if (['call_ended','done','ready'].includes(st)) setLife('ended');
+    else if (['fatal','error'].includes(st)) { setLife('join', true); hideWaitingBanner(); }
+    else if (st === 'expired') { setLife('join', true); hideWaitingBanner(); }
+    setStatus(info.icon, info.label, info.sub, info.stage);
+    return;
+  }
+  hideWaitingBanner();
+  setLife('join');
+  setStatus('\\uD83D\\uDD0E', 'Bot status: ' + st, 'Polling Recall.ai status through the n8n proxy.', 'Status');
+}
+
+/* ═══════════════════════════════════════
+   Join Meeting / Check Status / Leave
+   ═══════════════════════════════════════ */
+async function joinMeeting() {
+  const url = val('meetingUrl');
+  if (!url) { toast('error', 'URL Required', 'Enter a Google Meet URL.'); return; }
+  saveConfig();
+  setLife('join');
+  setStatus('🚀', 'Creating bot...', 'Calling n8n /recall-start webhook.', 'Joining');
+  try {
+    const data = await postJSON(val('epStart'), basePayload());
+    if (data.success && data.bot_id) {
+      setVal('botId', data.bot_id);
+      state.bot = data;
+      state.rawBot = data.raw || data;
+      toast('success', 'Bot Created', 'ID: ' + data.bot_id);
+      log('green', 'Bot created: ' + data.bot_id);
+      setStatus('✅', 'Bot Created', 'Bot ID: ' + data.bot_id + '. Waiting for join.', 'Bot Created');
+      mapStatus(data.bot_status || 'created');
+      saveBotToHistory(data);
+      startPolling();
+    } else {
+      toast('error', 'Create Failed', data.message || 'Unknown error');
+      setStatus('❌', 'Create Failed', data.message || 'Check n8n workflow.', 'Error');
+    }
+    $('rawBox').textContent = pretty(data);
+  } catch(e) {
+    toast('error', 'Join Failed', e.message);
+    setStatus('❌', 'Join Failed', e.message, 'Error');
+  }
+  renderOverview();
+}
+
+async function checkStatus() {
+  const bot_id = val('botId');
+  if (!bot_id) { toast('error', 'Bot ID Required', 'Join a meeting first.'); return; }
+  setStatus('🔍', 'Checking status...', 'Polling Recall.ai status.', 'Checking');
+  try {
+    const data = await postJSON(val('epStatus'), { ...basePayload(), bot_id });
+    if (data.success && data.bot_status) {
+      mapStatus(data.bot_status);
+      log('blue', 'Status: ' + data.bot_status);
+    } else {
+      setStatus('❌', 'Status Error', data.message || 'Unknown', 'Error');
+    }
+    $('rawBox').textContent = pretty(data);
+  } catch(e) {
+    toast('error', 'Status Failed', e.message);
+  }
+}
+
+function startPolling() {
+  if (state.pollTimer) clearInterval(state.pollTimer);
+  state.isPolling = true;
+  state.pollTimer = setInterval(async () => {
+    const bot_id = val('botId');
+    if (!bot_id) return;
+    try {
+      const data = await postJSON(val('epStatus'), { ...basePayload(), bot_id });
+      if (data.success && data.bot_status) {
+        const st = data.bot_status;
+        if (['call_ended','done','ready','fatal','error','expired'].includes(st)) {
+          clearInterval(state.pollTimer);
+          state.pollTimer = null;
+          state.isPolling = false;
+          // Auto-fetch transcript when meeting ends
+          if (['call_ended','done','ready'].includes(st) && val('botId')) {
+            log('blue', 'Meeting ended. Starting transcript auto-fetch loop...');
+            setStatus('⏳', 'Meeting ended. Waiting for transcript JSON.', 'Auto-fetch will start in 5s.', 'Waiting Transcript');
+            state.autoFetchActive = true;
+            state.autoFetchAttempt = 0;
+            transcriptAutoFetchLoop(val('botId'));
+          }
+        }
+        mapStatus(st);
+      }
+    } catch(e) {}
+    renderOverview();
+  }, 8000);
+}
+
+async function leaveBot() {
+  const bot_id = val('botId');
+  if (!bot_id) { toast('error', 'Bot ID Required', 'No bot to leave.'); return; }
+  setStatus('⛔', 'Ending bot', 'Calling n8n recall-leave webhook.', 'Ending');
+  console.log('[Leave] Sending leave command for bot:', bot_id);
+  try {
+    const data = await postJSON(val('epLeave'), { ...basePayload(), bot_id });
+    $('rawBox').textContent = pretty(data);
+    if (state.pollTimer) { clearInterval(state.pollTimer); state.pollTimer = null; }
+    setLife('ended');
+    log('yellow', 'Leave command sent.');
+    toast('warning', 'Bot Ended', 'Leave command sent.');
+  } catch(e) {
+    log('red', 'Leave failed: ' + e.message);
+    toast('error', 'Leave Failed', e.message);
+  }
+}
+
+/* ═══════════════════════════════════════
+   Transcript functions (2E, 2F, 2L, 2M)
+   ═══════════════════════════════════════ */
+async function fetchTranscript(opts = {}) {
+  // Cancel any pending auto-fetch timer — this is a fresh call
+  if (state.autoFetchTimer) {
+    clearTimeout(state.autoFetchTimer);
+    state.autoFetchTimer = null;
+  }
+  try {
+    const bot_id = val('botId');
+    if (!bot_id) {
+      if (state.autoFetchActive) stopAutoFetch();
+      throw new Error('Bot ID is required.');
+    }
+    if (!opts.fromAutoLoop) setLife('json');
+    setStatus('📦', 'Fetching transcript JSON', 'Calling the n8n recall-transcript webhook.', 'Fetching');
+    log('blue', 'Fetching transcript for bot: ' + bot_id);
+    const data = await postJSON(val('epTranscript'), { ...basePayload(), bot_id, include_raw: true, force_refresh: true });
+
+    console.log('[Recall Transcript] Fetched transcript data:', data.status, data.segment_count, data.message);
+
+    // Handle not_ready / no_results / no_done_transcript — all are retryable
+    const isRetryable = data.status === 'not_ready' || data.status === 'no_results' ||
+      data.status === 'no_done_transcript' || data.status === 'processing' ||
+      (data.success === true && !data.segment_count && data.status !== 'ok' &&
+       data.status !== 'error' && data.status !== 'http_error' && data.status !== 'parse_failed');
+    if (isRetryable) {
+      state.transcriptNotReady = true;
+      const retryAfter = data.retry_after_seconds || 30;
+      const statusLabel = {
+        not_ready: 'Transcript generating',
+        no_results: 'No results yet',
+        no_done_transcript: 'Transcript not finalized'
+      }[data.status] || 'Not ready';
+      log('yellow', statusLabel + '. ' + (data.message || ''));
+      toast('warning', statusLabel, data.message || ('Retry in ' + retryAfter + 's'));
+      setStatus('⏳', statusLabel, (data.message || 'Retry soon.'), 'Not Ready');
+      $('rawBox').textContent = pretty(data);
+      renderOverview();
+      // Continue auto-fetch loop or start one
+      if (state.autoFetchActive || opts.fromAutoLoop) {
+        // Loop was already running — let transcriptAutoFetchLoop handle scheduling
+        transcriptAutoFetchLoop(val('botId'), { continueCount: true });
+      } else if (!opts.fromManual) {
+        // Started by polling-end; kick off a loop
+        state.autoFetchActive = true;
+        transcriptAutoFetchLoop(val('botId'), { continueCount: true });
+      }
+      // Manual fetch (opts.fromManual): don't auto-start, just show status
+      return;
+    }
+
+    // Handle http_error - RED error with specific message
+    if (data.status === 'http_error') {
+      state.transcriptNotReady = true;
+      const statusCode = data.status_code || '?';
+      const msg = data.message || 'HTTP error occurred';
+      log('red', 'HTTP ERROR ' + statusCode + ': ' + msg);
+      log('red', 'Fix: ' + (data.fix_hint || 'Check n8n execution'));
+      log('red', '=== TROUBLESHOOT ' + statusCode + ': ' + (statusCode === '401' ? 'API key region mismatch - check Recall.ai dashboard' : statusCode === '404' ? 'Bot expired or wrong region - create new bot' : statusCode === '429' ? 'Rate limited - wait 30s and retry' : 'Check n8n executions for HTTP - Get Recall Transcript') + ' ===');
+      setStatus('❌', 'HTTP Error ' + statusCode, msg + '. ' + (data.fix_hint || ''), 'Error');
+      toast('error', 'HTTP ' + statusCode, msg);
+      $('rawBox').textContent = pretty(data);
+      renderOverview();
+      return;
+    }
+
+    // Handle parse_failed / s3 errors - RED error with new debug fields from new workflow
+    if (data.status === 'parse_failed' || data.status === 's3_parse_failed' || data.status === 's3_download_failed' || data.error_code === 'NO_SEGMENTS_FOUND' || data.error_code === 'SHAPE_NOT_RECOGNIZED') {
+      state.transcriptNotReady = true;
+      const rawPreviewStr = data.raw_preview || 'none';
+      log('red', 'PARSE FAILED: ' + (data.message || 'Shape not recognized'));
+      log('red', 'Raw preview (first 300): ' + rawPreviewStr.slice(0, 300));
+      // New debug fields from fixed workflow
+      if (data.raw_body_type) log('red', 'Body type: ' + data.raw_body_type + ' | Constructor: ' + (data.raw_body_constructor || 'N/A'));
+      if (data.raw_body_is_string !== undefined) log('red', 'Body isString: ' + data.raw_body_is_string + ' | isArray: ' + data.raw_body_is_array);
+      if (data.raw_body_length) log('red', 'Body length: ' + data.raw_body_length);
+      if (data.raw_body_preview) log('red', 'Body preview: ' + (typeof data.raw_body_preview === 'string' ? data.raw_body_preview.slice(0, 200) : JSON.stringify(data.raw_body_preview).slice(0, 200)));
+      if (data.response_type) log('red', 'Response type: ' + data.response_type + ' | keys: ' + (data.response_keys || 'N/A'));
+      log('red', '=== FIX: Check n8n execution log for HTTP - Download Transcript S3 node. If redirect issue, ensure redirect.redirect:true is set. ===');
+      setStatus('❌', 'Parse Failed', data.message || 'Format not recognized. Check n8n execution log.', 'Error');
+      toast('error', 'Parse Failed', data.message || 'Format not recognized');
+      $('rawBox').textContent = pretty(data);
+      renderOverview();
+      return;
+    }
+
+    state.transcriptNotReady = false;
+    state.retryCount = 0;
+    stopAutoFetch(); // Stop auto-fetch loop on success
+
+    // Store canonical segments
+    state.canonicalSegments = data.canonical_segments || [];
+    state.cleaningStats = data.cleaning_stats || null;
+    console.log('[Canonical Segments] Count:', state.canonicalSegments.length, 'Cleaning:', state.cleaningStats);
+
+    state.rawTranscript = data.raw_transcript || data.raw || data.results || data.transcript || data;
+    $('rawBox').textContent = pretty(data);
+    state.cleanText = safeCleanText(data);
+
+    if (data.message) {
+      log(data.segment_count ? 'green' : 'yellow', data.message);
+    } else {
+      log('green', 'Transcript JSON fetched.');
+    }
+
+    calculateQualityScore();
+
+    if (state.cleanText) {
+      setVal('treatedText', state.cleanText);
+      renderTranscriptFromText(state.cleanText);
+      renderCanonicalSegments();
+      renderQualityPanel();
+      renderCleanTranscript();
+      setStatus('📝', 'Clean transcript loaded', 'Review the transcript, then run language treatment.', 'Transcript');
+    } else {
+      buildTranscript();
+    }
+    renderOverview();
+    switchTab('transcript');
+  } catch(e) {
+    log('red', 'Transcript fetch failed: ' + e.message);
+    toast('error', 'Fetch Failed', e.message);
+    $('rawBox').textContent = $('rawBox').textContent || pretty({
+      status: 'error', message: e.message, endpoint: val('epTranscript'), bot_id: val('botId'),
+      hint: 'Wait 3-10 minutes after the meeting ends, then try again.'
+    });
+  }
+}
+
+function safeCleanText(data) {
+  if (!data) return '';
+  // Use transcript_text directly from new workflow (already formatted)
+  if (data.transcript_text && typeof data.transcript_text === 'string' && data.transcript_text.length > 10) {
+    return data.transcript_text;
+  }
+  // Fallback: reconstruct from canonical_segments
+  const segments = data.canonical_segments || data.segments || data.transcript || data.results || data.data || [];
+  if (Array.isArray(segments)) {
+    return segments.map(s => {
+      const sp = s.speaker_name || s.speaker || 'Speaker';
+      const t = s.start_time || s.time || '0:00';
+      const txt = s.text_clean || s.text || s.transcript || '';
+      return '[' + t + '] ' + sp + ': ' + txt;
+    }).join('\n');
+  }
+  return '';
+}
+
+function buildTranscript() {
+  if (!state.rawTranscript) { toast('warning', 'No Data', 'Fetch transcript JSON first.'); return; }
+  const raw = state.rawTranscript;
+  let text = '';
+  if (typeof raw === 'string') text = raw;
+  else if (Array.isArray(raw)) {
+    // New format: participant + words array
+    text = raw.map(s => {
+      const sp = s.participant?.name || s.speaker_name || s.speaker || 'Speaker';
+      // Get text from words array
+      let txt = '';
+      if (Array.isArray(s.words)) txt = s.words.map(w => w.text || w.word || '').filter(t => t).join(' ');
+      else txt = s.text || s.transcript || s.content || '';
+      // Get timestamp from first word
+      let time = '0:00';
+      if (Array.isArray(s.words) && s.words[0]?.start_timestamp?.relative) {
+        const sec = Math.round(s.words[0].start_timestamp.relative);
+        time = Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
+      }
+      return '[' + time + '] ' + sp + ': ' + txt;
+    }).filter(t => t.length > 10).join('\n');
+  }
+  else if (typeof raw === 'object') text = raw.transcript_text || raw.transcript || raw.text || '';
+  state.cleanText = text || '';
+  if (state.cleanText) {
+    renderTranscriptFromText(state.cleanText);
+    setVal('treatedText', state.cleanText);
+    toast('success', 'Transcript Built', state.cleanText.length + ' chars.');
+  } else {
+    toast('warning', 'Empty', 'No text could be extracted.');
+  }
+  renderOverview();
+}
+
+function renderTranscriptFromText(text) {
+  const el = document.getElementById('transcriptView');
+  if (!el) return;
+  if (!text) { el.innerHTML = '<div class="empty-state"><div class="icon">📝</div><div class="label">Empty</div></div>'; return; }    // Normalize: replace escaped \\n with real newlines, then split
+    const normalText = text.replace(/\\n/g, '\n');
+    const lines = normalText.split('\n');
+  let html = '<div class="card" style="max-height:60vh;overflow-y:auto">';
+  lines.forEach(l => {
+    if (!l.trim()) return;
+    // Parse [time] Speaker: text format
+    const match = l.match(/^\[([^\]]+)\]\s+([^:]+):\s*(.*)/);
+    if (match) {
+      const time = match[1];
+      const speaker = match[2];
+      const txt = match[3];
+      html += '<div class="transcript-line"><div class="time">' + esc(time) + '</div><div class="speaker">' + esc(speaker) + '</div><div class="text">' + esc(txt) + '</div></div>';
+    } else {
+      html += '<div class="transcript-line"><div class="time"></div><div class="speaker"></div><div class="text">' + esc(l) + '</div></div>';
+    }
+  });
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+/* ═══════════════════════════════════════
+   2L: Quality Score Calculation
+   ═══════════════════════════════════════ */
+function calculateQualityScore() {
+  const segs = state.canonicalSegments;
+  const cleanText = state.cleanText || '';
+  let score = 100;
+  const warnings = [];
+
+  if (!cleanText || cleanText.length === 0) { score -= 100; warnings.push('Transcript is empty'); }
+  if (segs.length < 3) { score -= 30; warnings.push('Too few segments (' + segs.length + ')'); }
+
+  const hasTimestamps = segs.some(s => s.start_ms > 0 || (s.start_seconds && s.start_seconds > 0));
+  if (!hasTimestamps) { score -= 20; warnings.push('No timestamps found'); }
+
+  const speakerSet = new Set(segs.map(s => s.speaker_name));
+  if (speakerSet.size <= 1) { score -= 15; warnings.push('Only one speaker detected'); }
+
+  const unclearCount = segs.filter(s => s.text_clean.toLowerCase().includes('[unclear]')).length;
+  const unclearPct = segs.length > 0 ? Math.round((unclearCount / segs.length) * 100) : 0;
+  if (unclearPct > 30) { score -= 20; warnings.push('Unclear segments > 30%'); }
+
+  const dupRemoved = state.cleaningStats?.duplicates_removed || 0;
+  const origCount = state.cleaningStats?.original_count || segs.length;
+  const dupPct = origCount > 0 ? Math.round((dupRemoved / origCount) * 100) : 0;
+  if (dupPct > 20) { score -= 10; warnings.push('Duplicate segments > 20%'); }
+
+  // Treated length check
+  const treatedLen = (state.treatedText || '').length;
+  if (treatedLen > 0 && cleanText.length > 0 && treatedLen < cleanText.length * 0.5) {
+    score -= 15;
+    warnings.push('Treated length < 50% of clean length (' + Math.round((treatedLen/cleanText.length)*100) + '%)');
+  }
+
+  score = Math.max(0, Math.min(100, score));
+
+  state.qualityScore = {
+    quality_score: score,
+    ready_for_sdlc: score >= 60 && cleanText.length >= 80 && segs.length >= 3,
+    segment_count: segs.length,
+    speaker_count: speakerSet.size,
+    duplicate_removed: dupRemoved,
+    empty_removed: state.cleaningStats?.empty_removed || 0,
+    unclear_count: unclearCount,
+    unclear_percentage: unclearPct,
+    transcript_length: cleanText.length,
+    has_timestamps: hasTimestamps,
+    has_speakers: speakerSet.size > 1,
+    warnings: warnings
+  };
+  console.log('[Quality Score]', state.qualityScore);
+  log('blue', 'Quality score: ' + score + '/100' + (state.qualityScore.ready_for_sdlc ? ' - Ready for SDLC' : ' - Needs review'));
+}
+
+function renderQualityPanel() {
+  const el = document.getElementById('qualityPanel');
+  if (!el) return;
+  const q = state.qualityScore;
+  if (!q) { el.innerHTML = '<div class="empty-state"><div class="icon">📊</div><div class="label">No Quality Data</div><div class="desc">Fetch transcript first.</div></div>'; return; }
+
+  let html = '<div class="card"><div class="pretitle">Quality Check</div><div class="grid-2">';
+  html += '<div class="metric"><div class="metric-k">Quality Score</div><div class="metric-v ' + (q.quality_score >= 60 ? 'ok' : 'err') + '">' + q.quality_score + '/100</div></div>';
+  html += '<div class="metric"><div class="metric-k">Ready for SDLC</div><div class="metric-v ' + (q.ready_for_sdlc ? 'ok' : 'err') + '">' + (q.ready_for_sdlc ? 'Yes' : 'No') + '</div></div>';
+  html += '<div class="metric"><div class="metric-k">Segment Count</div><div class="metric-v">' + q.segment_count + '</div></div>';
+  html += '<div class="metric"><div class="metric-k">Speaker Count</div><div class="metric-v">' + q.speaker_count + '</div></div>';
+  html += '<div class="metric"><div class="metric-k">Duplicates Removed</div><div class="metric-v info">' + q.duplicate_removed + '</div></div>';
+  html += '<div class="metric"><div class="metric-k">Empty Removed</div><div class="metric-v info">' + q.empty_removed + '</div></div>';
+  html += '<div class="metric"><div class="metric-k">Unclear %</div><div class="metric-v ' + (q.unclear_percentage > 30 ? 'err' : 'ok') + '">' + q.unclear_percentage + '%</div></div>';
+  html += '<div class="metric"><div class="metric-k">Transcript Length</div><div class="metric-v">' + q.transcript_length + ' chars</div></div>';
+  html += '</div>';
+
+  if (q.warnings.length > 0) {
+    html += '<div class="mt-8" style="border-top:1px solid var(--border);padding-top:10px">';
+    html += '<div class="text-sm text-muted" style="font-weight:700;margin-bottom:6px">Warnings:</div>';
+    q.warnings.forEach(w => { html += '<div class="debug-highlight" style="margin-bottom:4px;font-size:10px">' + esc(w) + '</div>'; });
+    html += '</div>';
+  }
+
+  if (q.quality_score < 60) {
+    html += '<div class="hint error mt-8">Transcript quality is low (' + q.quality_score + '/100). Review before SDLC extraction.</div>';
+  }
+
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+/* ═══════════════════════════════════════
+   2F: Canonical Segments Panel
+   ═══════════════════════════════════════ */
+function renderCanonicalSegments() {
+  const el = document.getElementById('canonicalSegmentsView');
+  if (!el) return;
+  const segs = state.canonicalSegments;
+  if (!segs || !segs.length) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">📋</div><div class="label">No Canonical Segments</div><div class="desc">Fetch transcript first.</div></div>';
+    return;
+  }
+
+  const speakers = new Set(segs.map(s => s.speaker_name));
+
+  let html = '<div class="card"><div class="pretitle">Canonical Segments</div>';
+  html += '<div class="grid-3" style="margin-bottom:12px">';
+  html += '<div class="metric"><div class="metric-k">Total Segments</div><div class="metric-v info">' + segs.length + '</div></div>';
+  html += '<div class="metric"><div class="metric-k">Speakers</div><div class="metric-v info">' + speakers.size + '</div></div>';
+
+  if (state.cleaningStats) {
+    html += '<div class="metric"><div class="metric-k">Cleaning Stats</div><div class="metric-v" style="font-size:10px">Orig: ' + state.cleaningStats.original_count + ' | Dup removed: ' + state.cleaningStats.duplicates_removed + ' | Empty: ' + state.cleaningStats.empty_removed + '</div></div>';
+  }
+  html += '</div>';
+
+  html += '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--dim);margin-bottom:8px">First 5 Segments (sample)</div>';
+  const samples = segs.slice(0, 5);
+  samples.forEach(s => {
+    html += '<div class="debug-highlight" style="margin-bottom:4px;font-size:10px;line-height:1.5">';
+    html += '<b>' + esc(s.speaker_name) + '</b> [' + s.start_time + '] <span style="color:var(--dim)">' + s.segment_id + '</span><br>';
+    html += esc(s.text_clean.slice(0, 120)) + (s.text_clean.length > 120 ? '...' : '');
+    html += '</div>';
+  });
+
+  html += '<button class="btn ghost" onclick="downloadCanonical()" style="margin-top:10px;width:100%">Download Canonical JSON</button>';
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+/* ═══════════════════════════════════════
+   2M: Clean Transcript Panel
+   ═══════════════════════════════════════ */
+function renderCleanTranscript() {
+  const el = document.getElementById('cleanTranscriptView');
+  if (!el) return;
+  const segs = state.canonicalSegments;
+  if (!segs || !segs.length) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">📝</div><div class="label">No Clean Transcript</div><div class="desc">No transcript available yet. Fetch transcript first.</div></div>';
+    return;
+  }
+
+  let html = '<div class="card"><div class="pretitle">Speaker-wise Clean Transcript</div>';
+  html += '<div style="margin-bottom:10px;display:flex;gap:8px">';
+  html += '<button class="btn ghost" onclick="copyCleanTranscript()" style="font-size:10px;padding:5px 10px">Copy</button>';
+  html += '</div>';
+
+  segs.forEach(s => {
+    html += '<div class="transcript-line">';
+    html += '<div class="time">' + (s.start_time || '') + '</div>';
+    html += '<div class="speaker">' + esc(s.speaker_name) + '</div>';
+    html += '<div class="text">' + esc(s.text_clean) + '</div>';
+    html += '</div>';
+  });
+
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+function copyCleanTranscript() {
+  const text = state.canonicalSegments.map(s => '[' + s.start_time + '] ' + s.speaker_name + ': ' + s.text_clean).join('\\n');
+  if (!text) { toast('warning', 'Nothing to Copy', 'No transcript available.'); return; }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => toast('success', 'Copied', 'Clean transcript copied.'));
+  }
+}
+
+/* ═══════════════════════════════════════
+   2G + 2H: Downloads
+   ═══════════════════════════════════════ */
+function downloadRaw() {
+  const bundle = {
+    bot: state.rawBot,
+    raw_transcript: state.rawTranscript,
+    canonical_segments: state.canonicalSegments,
+    clean_text: state.cleanText,
+    treated_text: state.treatedText
+  };
+  console.log('[Download] Raw JSON bundle includes canonical_segments and treated_text');
+  download('recall_raw_json_' + Date.now() + '.json', pretty(bundle), 'application/json');
+}
+
+function downloadTxt() {
+  download('recall_transcript_' + Date.now() + '.txt', $('treatedText').value.trim() || state.cleanText || '');
+}
+
+function downloadCanonical() {
+  const segs = state.canonicalSegments;
+  if (!segs || !segs.length) { toast('warning', 'No Canonical Data', 'No canonical segments to download.'); return; }
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  const filename = 'recall_canonical_segments_' + timestamp + '.json';
+  console.log('[Download] Canonical JSON: ' + filename + ' (' + segs.length + ' segments)');
+  download(filename, pretty(segs), 'application/json');
+  toast('success', 'Downloaded', 'Canonical segments saved.');
+}
+
+/* ═══════════════════════════════════════
+   Treatment functions (2I)
+   ═══════════════════════════════════════ */
+async function aiTreatTranscript() {
+  const transcript = $('treatedText').value.trim() || state.cleanText;
+  if (!transcript) { toast('error', 'No Transcript', 'Fetch a transcript first.'); return; }
+  setLife('treat');
+  setStatus('🧠', 'AI Treatment in progress...', 'Calling n8n /recall-treat-transcript.', 'Treating');
+  log('blue', 'AI treatment requested. ' + transcript.length + ' chars.');
+  const payload = { ...basePayload(), transcript, project_name: val('projectName'), meeting_id: val('botId') };
+  try {
+    const data = await postJSON(val('epTreat'), payload);
+
+    let out = deepFind(data, ['treated_transcript', 'transcript', 'transcript_text', 'output', 'text', 'content'])
+      || data?.data?.treated_transcript || data?.data?.transcript
+      || data?.response?.treated_transcript || data?.response?.transcript
+      || data?.choices?.[0]?.message?.content || data?.content?.[0]?.text || '';
+
+    state.treatedSegments = data.segments || data?.data?.segments || data?.response?.segments || [];
+    state.treatmentSummary = data.summary || data?.data?.summary || data?.response?.summary || '';
+    state.requirementsCandidates = data.requirements_candidates || data?.data?.requirements_candidates || data?.response?.requirements_candidates || [];
+    state.decisions = data.decisions || data?.data?.decisions || data?.response?.decisions || [];
+    state.actionItems = data.action_items || data?.data?.action_items || data?.response?.action_items || [];
+    state.unclearItems = data.unclear_items || data?.data?.unclear_items || data?.response?.unclear_items || [];
+    state.treatmentMode = data.treatment_mode || 'ai';
+
+    console.log('[Treatment] Fields stored:', {
+      segments: state.treatedSegments.length, summary: state.treatmentSummary.slice(0, 100),
+      requirements: state.requirementsCandidates.length, decisions: state.decisions.length,
+      actionItems: state.actionItems.length, unclearItems: state.unclearItems.length, mode: state.treatmentMode
+    });
+
+    if (typeof out === 'string' && out.length > 10) {
+      setVal('treatedText', out);
+      state.treatedText = out;
+      updateTreatmentStats(transcript, out);
+      renderTreatmentSummary();
+      setLife('treat');
+      $('rawBox').textContent = pretty(data);
+      log('green', 'AI treatment completed: ' + transcript.length + ' -> ' + out.length + ' chars.');
+      toast('success', 'AI Treatment Done', 'Treated: ' + out.length + ' chars.');
+    } else {
+      log('yellow', 'AI treatment returned empty response. Raw data saved.');
+      $('rawBox').textContent = pretty(data);
+      toast('warning', 'Treatment Empty', 'AI returned no treated text. Check n8n workflow.');
+    }
+  } catch(e) {
+    log('red', 'AI treatment failed: ' + e.message);
+    toast('error', 'Treatment Failed', e.message);
+  }
+  renderOverview();
+}
+
+function localTreatTranscript() {
+  const text = $('treatedText').value.trim() || state.cleanText;
+  if (!text) { toast('warning', 'No Transcript', 'Fetch transcript first.'); return; }
+  const lang = val('treatmentSourceLang') || 'ur';
+  const treated = text
+    .replace(/\\bhai\\b/gi, 'yes/brother').replace(/\\btheek\\b/gi, 'okay').replace(/\\bacha\\b/gi, 'child/okay')
+    .replace(/\\bhaan\\b/gi, 'yes').replace(/\\bnahi\\b/gi, 'no').replace(/\\bho\\b/gi, 'is/are')
+    .replace(/\\bkar\\b/gi, 'do').replace(/\\bja\\b/gi, 'go').replace(/\\bmein\\b/gi, 'in/I');
+  setVal('treatedText', treated);
+  state.treatedText = treated;
+  state.treatmentMode = 'local_fallback';
+  updateTreatmentStats(text, treated);
+  renderTreatmentSummary();
+  setLife('treat');
+  toast('success', 'Local Treatment Done', 'Local Roman Urdu -> English applied.');
+  log('green', 'Local treatment: ' + text.length + ' -> ' + treated.length + ' chars.');
+  renderOverview();
+}
+
+function updateTreatmentStats(orig, treated) {
+  const stats = document.getElementById('treatmentStats');
+  if (stats) {
+    const ratio = orig.length > 0 ? Math.round((treated.length / orig.length) * 100) : 100;
+    stats.textContent = 'Original: ' + orig.length + ' chars | Treated: ' + treated.length + ' chars (' + ratio + '%)';
+  }
+  const btn = document.getElementById('btnToggleView');
+  if (btn) {
+    btn.style.display = 'block';
+    state.originalText = orig;
+    const origView = document.getElementById('treatmentOriginalView');
+    if (origView) origView.textContent = orig;
+  }
+}
+
+function resetTreatedText() {
+  const clean = state.cleanText || '';
+  setVal('treatedText', clean);
+  state.treatedText = clean;
+  toast('info', 'Reset', 'Treated text reset to original clean transcript.');
+}
+
+function toggleTreatmentView() {
+  const compare = document.getElementById('treatmentCompare');
+  const isHidden = compare.style.display === 'none';
+  compare.style.display = isHidden ? 'block' : 'none';
+  document.getElementById('btnToggleView').textContent = isHidden ? 'Show Original' : 'Show Treated';
+}
+
+function renderTreatmentSummary() {
+  const el = document.getElementById('treatmentSummaryCards');
+  if (!el) return;
+
+  let html = '<div class="card" style="background:var(--bg2);border-color:var(--border2)">';
+  html += '<div class="pretitle">Treatment Results</div>';
+
+  const mode = state.treatmentMode || 'local_fallback';
+  const modeLabel = mode === 'ai' ? 'AI' : 'Local Fallback';
+  html += '<div style="margin-bottom:12px"><span class="badge ' + (mode === 'ai' ? 'purple' : 'success') + ' sm">' + modeLabel + '</span></div>';
+
+  if (state.treatmentSummary) {
+    html += '<div class="metric" style="margin-bottom:10px"><div class="metric-k">Summary</div><div class="metric-v" style="font-size:12px;line-height:1.6">' + esc(state.treatmentSummary) + '</div></div>';
+  }
+
+  html += '<div class="grid-3">';
+  html += '<div class="metric"><div class="metric-k">Requirements</div><div class="metric-v info">' + state.requirementsCandidates.length + '</div></div>';
+  html += '<div class="metric"><div class="metric-k">Decisions</div><div class="metric-v info">' + state.decisions.length + '</div></div>';
+  html += '<div class="metric"><div class="metric-k">Action Items</div><div class="metric-v info">' + state.actionItems.length + '</div></div>';
+  html += '<div class="metric"><div class="metric-k">Unclear Items</div><div class="metric-v ' + (state.unclearItems.length > 0 ? 'warn' : 'ok') + '">' + state.unclearItems.length + '</div></div>';
+  html += '<div class="metric"><div class="metric-k">Treated Segments</div><div class="metric-v info">' + state.treatedSegments.length + '</div></div>';
+  html += '<div class="metric"><div class="metric-k">Mode</div><div class="metric-v info">' + modeLabel + '</div></div>';
+  html += '</div></div></div>';
+  el.innerHTML = html;
+}
+
+/* ═══════════════════════════════════════
+   2J + 2K: SDLC Preview + Approval Gate
+   ═══════════════════════════════════════ */
+function buildSdlcPreview() {
+  const transcript = $('treatedText').value.trim() || state.treatedText || state.cleanText;
+  if (!transcript) { log('yellow', 'No transcript available.'); toast('warning', 'No Transcript', 'Build or treat a transcript first.'); return; }
+
+  const preview = {
+    source: 'royalsoft_recall_sdlc_lifecycle_dashboard',
+    meeting_id: val('botId'),
+    bot_id: val('botId'),
+    project_name: val('projectName') || 'RoyalSoft TMS',
+    title: (val('projectName') || 'RoyalSoft TMS') + ' SDLC Meeting',
+    transcript,
+    canonical_segments: state.canonicalSegments || [],
+    treatment: {
+      summary: state.treatmentSummary || '',
+      requirements_candidates: state.requirementsCandidates || [],
+      decisions: state.decisions || [],
+      action_items: state.actionItems || [],
+      unclear_items: state.unclearItems || []
+    },
+    sdlc_extraction_contract: {
+      extract: ['business_requirements','functional_requirements','non_functional_requirements','decisions','action_items','tasks','blockers','integrations','acceptance_criteria'],
+      exclude: ['greetings','small_talk','unclear_noise','repeated_phrases'],
+      approval_required_before_tms_assignment: true
+    },
+    approved_by: 'user',
+    approved_at: new Date().toISOString(),
+    status: 'approved',
+    created_at: new Date().toISOString()
+  };
+
+  state.sdlc = preview;
+  setVal('sdlcPreview', pretty(preview));
+  setLife('sdlc');
+  renderApprovalGate(preview);
+  setStatus('📋', 'SDLC preview ready', 'Review the JSON, then approve to send to TMS workflow.', 'SDLC Ready');
+  log('green', 'SDLC preview built with canonical_segments and treatment.');
+  console.log('[SDLC Preview] Built from canonical_segments + treatment. Raw JSON not included.');
+  toast('success', 'SDLC Preview', 'Review the JSON before approving.');
+  switchTab('sdlc');
+}
+
+function renderApprovalGate(preview) {
+  const el = document.getElementById('approvalGate');
+  if (!el) return;
+
+  const transcript = (preview && preview.transcript) || $('treatedText').value.trim() || state.cleanText || '';
+  const qs = state.qualityScore;
+  const qualityOk = qs ? qs.quality_score >= 60 : false;
+  const lengthOk = transcript.length >= 80;
+  const jsonValid = preview !== null && typeof preview === 'object';
+
+  let html = '<div class="card" style="border-color:rgba(59,130,246,.15)">';
+  html += '<div class="pretitle">Approval Gate</div>';
+
+  html += '<div style="margin-bottom:10px">';
+  html += '<div class="metric" style="margin-bottom:6px;padding:8px 10px"><div style="display:flex;justify-content:space-between;align-items:center"><span class="metric-k" style="margin:0">Transcript Length >= 80 chars</span><span class="' + (lengthOk ? 'ok' : 'err') + '" style="font-weight:700">' + (lengthOk ? 'Yes' : 'No') + ' ' + transcript.length + ' chars</span></div></div>';
+
+  if (qs) {
+    html += '<div class="metric" style="margin-bottom:6px;padding:8px 10px"><div style="display:flex;justify-content:space-between;align-items:center"><span class="metric-k" style="margin:0">Quality Score >= 60</span><span class="' + (qualityOk ? 'ok' : 'warn') + '" style="font-weight:700">' + (qualityOk ? 'Yes ' + qs.quality_score : 'No ' + qs.quality_score) + '</span></div></div>';
+  }
+
+  html += '<div class="metric" style="margin-bottom:6px;padding:8px 10px"><div style="display:flex;justify-content:space-between;align-items:center"><span class="metric-k" style="margin:0">Valid JSON Preview</span><span class="' + (jsonValid ? 'ok' : 'err') + '" style="font-weight:700">' + (jsonValid ? 'Yes' : 'No') + '</span></div></div>';
+  html += '</div>';
+
+  // Quality override checkbox when quality is low
+  if (!qualityOk && qs) {
+    html += '<div class="hint warning mt-8" style="font-size:11px;display:flex;align-items:center;gap:8px;padding:8px 12px">';
+    html += '<input type="checkbox" id="qualityOverride" onchange="renderApprovalGate(state.sdlc)" style="width:auto">';
+    html += '<label for="qualityOverride" style="font-size:11px;cursor:pointer">Override quality check (score: ' + qs.quality_score + '/100)</label>';
+    html += '</div>';
+  }
+
+  const overrideQuality = document.getElementById('qualityOverride')?.checked || false;
+  const qualityNeedsOverride = !qualityOk && qs !== null;
+  const canSend = lengthOk && jsonValid && (!qualityNeedsOverride || overrideQuality);
+  html += '<div class="split-actions" style="margin-top:4px">';
+  html += '<button class="btn success" onclick="approveAndSend()" ' + (canSend ? '' : 'disabled') + '>Approve & Send to TMS</button>';
+  html += '<button class="btn danger" onclick="rejectSdlc()">Reject / Needs Revision</button>';
+  html += '</div>';
+  html += '<div class="split-actions" style="margin-top:6px">';
+  html += '<button class="btn ghost" onclick="copySdlcJson()">Copy JSON</button>';
+  html += '<button class="btn ghost" onclick="downloadSdlcJson()">Download JSON</button>';
+  html += '</div>';
+
+  if (!qualityOk && qs) {
+    html += '<div class="hint warning mt-8" style="font-size:11px">Quality score is ' + qs.quality_score + '/60. You can still approve if needed.</div>';
+  }
+
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+async function approveAndSend() {
+  let previewText = $('sdlcPreview').value.trim();
+  if (!previewText) { buildSdlcPreview(); previewText = $('sdlcPreview').value.trim(); }
+
+  let preview;
+  try { preview = JSON.parse(previewText); } catch(e) { toast('error', 'Invalid JSON', 'Fix the syntax before sending.'); return; }
+
+  const finalTranscript = preview.transcript || $('treatedText').value.trim();
+  if (!finalTranscript || finalTranscript.length < 80) { toast('error', 'Too Short', 'Transcript too short (<80 chars).'); return; }
+
+  setStatus('➡', 'Approving & sending to TMS', 'Posting final SDLC payload to the n8n workflow.', 'Sending');
+
+  try {
+    const sdlcPayload = {
+      source: 'royalsoft_recall_sdlc_lifecycle_dashboard',
+      meeting_id: preview.meeting_id || val('botId'),
+      bot_id: val('botId'),
+      project_name: preview.project_name || val('projectName'),
+      title: preview.title || '',
+      transcript: finalTranscript,
+      canonical_segments: preview.canonical_segments || state.canonicalSegments || [],
+      treatment: preview.treatment || { summary: state.treatmentSummary, requirements_candidates: state.requirementsCandidates, decisions: state.decisions, action_items: state.actionItems, unclear_items: state.unclearItems },
+      sdlc_extraction_contract: { extract: ['business_requirements','functional_requirements','non_functional_requirements','decisions','action_items','tasks','blockers','integrations','acceptance_criteria'], exclude: ['greetings','small_talk','unclear_noise','repeated_phrases'], approval_required_before_tms_assignment: true },
+      approved_by: 'user',
+      approved_at: new Date().toISOString(),
+      status: 'approved'
+    };
+
+    console.log('[SDLC Send] Payload prepared (no raw_transcript included). canonical_segments:', sdlcPayload.canonical_segments.length, 'treatment:', !!sdlcPayload.treatment);
+    log('blue', 'Sending SDLC payload to TMS webhook...');
+
+    const data = await postJSON(val('epSdlc'), sdlcPayload);
+    $('n8nBox').textContent = pretty(data);
+    setStatus('✅', 'Approved & Sent to TMS', 'SDLC payload sent to TMS workflow.', 'Sent');
+    state.sdlc = null;
+    renderApprovalGate(null);
+    log('green', 'SDLC payload sent to TMS successfully.');
+    console.log('[SDLC Send] Response received:', data);
+    toast('success', 'Sent to TMS', 'SDLC payload approved and sent.');
+    switchTab('n8n');
+  } catch(e) {
+    $('n8nBox').textContent = e.message;
+    log('red', 'SDLC send failed: ' + e.message);
+    toast('error', 'Send Failed', e.message);
+  }
+}
+
+function rejectSdlc() {
+  toast('warning', 'Rejected', 'SDLC preview marked for revision.');
+  log('yellow', 'SDLC preview rejected by user.');
+  setStatus('🔄', 'SDLC rejected', 'Edit the transcript/treatment and rebuild SDLC preview.', 'Revision Needed');
+}
+
+function copySdlcJson() {
+  const text = $('sdlcPreview').value;
+  if (!text) { toast('warning', 'Nothing to Copy', 'Build SDLC preview first.'); return; }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => toast('success', 'Copied', 'SDLC JSON copied.'));
+  }
+}
+
+function downloadSdlcJson() {
+  const text = $('sdlcPreview').value;
+  if (!text) { toast('warning', 'Nothing to Download', 'Build SDLC preview first.'); return; }
+  download('recall_sdlc_preview_' + Date.now() + '.json', text, 'application/json');
+}
+
+/* ═══════════════════════════════════════
+   sendToSdlc (legacy, keep for compat)
+   ═══════════════════════════════════════ */
+async function sendToSdlc() {
+  await approveAndSend();
+}
+
+/* ═══════════════════════════════════════
+   Direct API Test
+   ═══════════════════════════════════════ */
+function copyTerminalCommands() {
+  const botId = document.getElementById('botId').value.trim() || 'BOT_ID_HERE';
+  const key = 'b4b49ce6a2f3b5e3b02e2335e994c52d456f90cc';
+  const cmds = `# ⭐ TWO-STEP TRANSCRIPT FETCH:\n# Step 1: List transcripts (get download_url from results):\ncurl -s -H "Authorization: Token ${key}" "https://ap-northeast-1.recall.ai/api/v1/transcript/?bot=${botId}"\n\n# Step 2: Download actual transcript from S3:\n# (Replace DOWNLOAD_URL with the download_url from Step 1 output)\ncurl -s "DOWNLOAD_URL"\n\n# Check bot status:\ncurl -s -H "Authorization: Token ${key}" "https://ap-northeast-1.recall.ai/api/v1/bot/${botId}/"\n\n# List all bots:\ncurl -s -H "Authorization: Token ${key}" "https://ap-northeast-1.recall.ai/api/v1/bot/"`;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(cmds).then(() => toast('success', 'Copied', 'Terminal commands copied.'));
+  }
+  document.getElementById('pasteAnalysisSection').style.display = 'block';
+}
+
+function analyzePastedOutput() {
+  const paste = document.getElementById('pasteOutput').value.trim();
+  if (!paste) { toast('warning', 'Empty', 'Paste the curl output first.'); return; }
+  
+  let data;
+  try {
+    data = JSON.parse(paste);
+  } catch(e) {
+    const jsonMatch = paste.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
+    if (jsonMatch) {
+      try { data = JSON.parse(jsonMatch[1]); } catch(e2) {
+        document.getElementById('pasteAnalysis').innerHTML = '<div class="hint error">❌ Could not parse JSON from the pasted output.</div>';
+        return;
+      }
+    } else {
+      document.getElementById('pasteAnalysis').innerHTML = '<div class="hint error">❌ No JSON found. Paste the complete curl output.</div>';
+      return;
+    }
+  }
+  
+  let html = '<div class="card"><div class="pretitle">Analysis</div>';
+  const isArray = Array.isArray(data);
+  const keys = isArray ? [] : Object.keys(data);
+  
+  if (isArray) {
+    // NEW FORMAT: Participant + words array (direct segment array from download_url)
+    html += '<div>✅ Response is an array with ' + data.length + ' items</div>';
+    if (data.length > 0) {
+      const sample = data[0];
+      const segKeys = Object.keys(sample);
+      html += '<div class="mt-4"><b>Segment keys:</b> ' + segKeys.join(', ') + '</div>';
+      
+      // Check for new format: participant + words
+      if (sample.participant) {
+        const name = sample.participant.name || sample.participant.id || 'unknown';
+        html += '<div>✅ <b>New format</b> - participant: ' + name + '</div>';
+      }
+      if (Array.isArray(sample.words)) {
+        html += '<div>✅ Words array: ' + sample.words.length + ' words</div>';
+        if (sample.words.length > 0) {
+          const sampleWord = sample.words[0];
+          html += '<div class="mt-4"><b>Word sample:</b> "' + esc(sampleWord.text || '') + '" [' + (sampleWord.start_timestamp?.relative || '') + 's]</div>';
+        }
+      }
+      
+      // Check for old format
+      if (sample.speaker || sample.speaker_name) html += '<div>✅ Old format speaker field present</div>';
+      if (sample.text || sample.content || sample.transcript) html += '<div>✅ Old format text field present</div>';
+      
+      // Parser compatibility
+      const hasNewFormat = sample.participant && Array.isArray(sample.words);
+      const hasOldFormat = (sample.speaker || sample.speaker_name) && (sample.text || sample.content || sample.transcript);
+      if (hasNewFormat) {
+        html += '<div class="hint success mt-4">✅ <b style="color:var(--success)">Updated parser CAN handle this!</b> (participant + words → getText/getSpeaker)</div>';
+      } else if (hasOldFormat) {
+        html += '<div class="hint success mt-4">✅ <b style="color:var(--success)">Legacy parser can handle this!</b></div>';
+      } else {
+        html += '<div class="hint error mt-4">❌ <b style="color:var(--danger)">Parser may FAIL</b> - unrecognized segment format</div>';
+      }
+    }
+  } else if (data.results && Array.isArray(data.results)) {
+    // NEW LIST FORMAT: {results: [{id, status: {code}, data: {download_url}}]}
+    html += '<div>✅ <b>Transcript list format</b> - ' + data.results.length + ' transcript(s) found</div>';
+    
+    data.results.forEach((t, i) => {
+      const tid = t.id || 'unknown';
+      const statusCode = t.status?.code || 'unknown';
+      const createdAt = t.created_at || '';
+      const hasDownloadUrl = !!(t.data?.download_url);
+      const hasProviderUrl = !!(t.data?.provider_data_download_url);
+      const speakerName = t.participant?.name || '';
+      
+      html += '<div class="segment-sample" style="margin-top:' + (i > 0 ? '8' : '4') + 'px">';
+      html += '<b>Transcript ' + (i+1) + ':</b> ' + tid.slice(0, 8) + '...<br>';
+      html += 'Status: <span style="color:' + (statusCode === 'done' ? 'var(--success)' : 'var(--warning)') + '">' + statusCode + '</span>';
+      if (createdAt) html += ' | Created: ' + new Date(createdAt).toLocaleTimeString();
+      html += '<br>';
+      html += '🔗 Download URL: ' + (hasDownloadUrl ? '✅ Available' : '❌ Missing');
+      if (hasProviderUrl) html += ' | Provider Data: ✅';
+      if (speakerName) html += ' | Speaker: ' + esc(speakerName);
+      html += '</div>';
+    });
+    
+    const doneCount = data.results.filter(t => t.status?.code === 'done').length;
+    const hasDownloadable = data.results.some(t => t.status?.code === 'done' && t.data?.download_url);
+    html += '<div class="mt-4">' + doneCount + '/' + data.results.length + ' done | ' + (hasDownloadable ? '✅ At least one downloadable transcript' : '❌ No downloadable transcript') + '</div>';
+    
+    if (hasDownloadable) {
+      const firstDone = data.results.find(t => t.status?.code === 'done' && t.data?.download_url);
+      html += '<div class="hint info mt-4">📋 To download: <code>curl -s "' + esc(firstDone.data.download_url.slice(0, 80)) + '..."</code></div>';
+    }
+    
+  } else {
+    html += '<div>✅ Response is an object with keys: ' + keys.join(', ') + '</div>';
+    if (data.detail) {
+      html += '<div class="hint error mt-4">❌ API Error: ' + data.detail + '</div>';
+    }
+    if (data.error) {
+      html += '<div class="hint error mt-4">❌ Error: ' + JSON.stringify(data.error) + '</div>';
+    }
+    for (const key of keys) {
+      if (Array.isArray(data[key]) && data[key].length > 0) {
+        const item = data[key][0];
+        if (item.speaker || item.text || item.content || item.speaker_name || item.participant) {
+          html += '<div class="mt-4">✅ Segments in <b>' + key + '</b>: ' + data[key].length + ' items</div>';
+          html += '<div class="mt-4"><b>Keys:</b> ' + Object.keys(item).join(', ') + '</div>';
+          const ok = (item.speaker || item.speaker_name || item.participant) && (item.text || item.content || item.transcript || (Array.isArray(item.words) && item.words.length > 0));
+          html += '<div>' + (ok ? '✅ Parser OK' : '❌ Parser fail') + '</div>';
+          break;
+        }
+      }
+    }
+    if (data.status) {
+      html += '<div class="mt-4"><b>Status:</b> ' + data.status + '</div>';
+      if (['done','ready'].includes(data.status)) html += '<div>✅ Transcript ready</div>';
+    }
+  }
+  
+  html += '</div>';
+  document.getElementById('pasteAnalysis').innerHTML = html;
+  toast('success', 'Analyzed', 'Check the analysis below.');
+}
+
+async function directApiTest() {
+  const botId = document.getElementById('directBotId').value.trim();
+  const apiKey = document.getElementById('directApiKey').value.trim();
+  const endpoint = document.getElementById('directEndpoint').value;
+  
+  if (!apiKey) { toast('error', 'API Key Required', 'Enter your Recall.ai API token.'); return; }
+  if (!botId && endpoint !== 'bot_list') { toast('error', 'Bot ID Required', 'Enter a bot ID.'); return; }
+  
+  let url = '';
+  if (endpoint === 'transcript') {
+    url = 'https://api.recall.ai/v1/transcript/' + encodeURIComponent(botId) + '/';
+  } else if (endpoint === 'bot_status') {
+    url = 'https://ap-northeast-1.recall.ai/api/v1/bot/' + encodeURIComponent(botId) + '/';
+  } else if (endpoint === 'bot_list') {
+    url = 'https://ap-northeast-1.recall.ai/api/v1/bot/';
+  }
+  
+  log('blue', 'Direct API test: ' + endpoint + ' for bot ' + (botId || 'list'));
+  document.getElementById('directRawBox').textContent = '⏳ Calling ' + url + '...';
+  document.getElementById('directTestAnalysis').style.display = 'none';
+  
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': 'Token ' + apiKey,
+        'Accept': 'application/json'
+      }
+    });
+    
+    const statusCode = resp.status;
+    let body;
+    try { body = await resp.json(); } catch(e) { body = await resp.text(); }
+    
+    const result = { status_code: statusCode, response: body };
+    document.getElementById('directRawBox').textContent = JSON.stringify(result, null, 2);
+    
+    // Analysis
+    let analysis = '';
+    if (statusCode >= 400) {
+      analysis += '<div class="hint error mt-4">❌ HTTP ' + statusCode + ' error';
+      const errMsg = body?.detail || body?.message || body?.error || JSON.stringify(body).slice(0,200);
+      analysis += '<br>' + esc(errMsg);
+      if (statusCode === 400 && errMsg.includes('legacy endpoint')) {
+        analysis += '<br>⚠ <b>Legacy endpoint!</b> Bot status/crud uses old regional URL. Transcript uses new api.recall.ai.</div>';
+      } else if (statusCode === 404) {
+        analysis += '<br>⚠ Bot not found. May be expired (24h TTL) or wrong region.</div>';
+      } else if (statusCode === 401) {
+        analysis += '<br>⚠ Invalid API key or region mismatch.</div>';
+      } else {
+        analysis += '</div>';
+      }
+    } else {
+      analysis += '<div class="hint success mt-4">✅ HTTP ' + statusCode + ' OK</div>';
+      
+      if (endpoint === 'transcript') {
+        // Analyze transcript response
+        const topKeys = Object.keys(body);
+        analysis += '<div class="mt-4"><b>Top-level keys:</b> ' + topKeys.join(', ') + '</div>';
+        
+        // Check for transcript data
+        let segments = null;
+        if (body.transcript && Array.isArray(body.transcript)) {
+          segments = body.transcript;
+          analysis += '<div class="mt-4">✅ <b>transcript</b> key found: ' + segments.length + ' segments</div>';
+        } else if (body.segments && Array.isArray(body.segments)) {
+          segments = body.segments;
+          analysis += '<div class="mt-4">✅ <b>segments</b> key found: ' + segments.length + ' segments</div>';
+        } else if (Array.isArray(body)) {
+          segments = body;
+          analysis += '<div class="mt-4">✅ Response is an array directly: ' + segments.length + ' items</div>';
+        } else if (body.data && Array.isArray(body.data)) {
+          segments = body.data;
+          analysis += '<div class="mt-4">✅ <b>data</b> key found: ' + segments.length + ' items</div>';
+        } else {
+          // Search deeper
+          for (const key of topKeys) {
+            if (body[key] && Array.isArray(body[key]) && body[key].length > 0 && (body[key][0]?.speaker || body[key][0]?.text)) {
+              segments = body[key];
+              analysis += '<div class="mt-4">✅ Found segments in <b>' + key + '</b>: ' + segments.length + ' items</div>';
+              break;
+            }
+          }
+          if (!segments) {
+            analysis += '<div class="mt-4">❌ <b>No segment array found</b> in any known key path</div>';
+            // Deep search
+            analysis += '<div class="mt-4">🔍 <b>Status:</b> ' + (body.status || 'unknown') + '</div>';
+            if (body.status === 'done' || body.status === 'ready' || body.status === 'completed') {
+              analysis += '<div class="hint warning mt-4">⚠ Status is "' + body.status + '" but segments not found in expected paths. New endpoint may use different key names.</div>';
+            }
+          }
+        }
+        
+        if (segments && segments.length > 0) {
+          const sample = segments[0];
+          const segKeys = Object.keys(sample);
+          analysis += '<div class="mt-4"><b>Segment keys:</b> ' + segKeys.join(', ') + '</div>';
+          analysis += '<div class="mt-4"><b>Sample segment:</b><pre class="raw" style="font-size:10px;margin-top:4px">' + esc(JSON.stringify(sample, null, 2)) + '</pre></div>';
+          
+          // Speaker detection
+          if (sample.speaker || sample.speaker_name) {
+            analysis += '<div class="mt-4">✅ Speaker: ' + esc(sample.speaker || sample.speaker_name) + '</div>';
+          }
+          if (sample.text || sample.content || sample.transcript) {
+            analysis += '<div class="mt-4">✅ Text: ' + esc((sample.text || sample.content || sample.transcript || '').slice(0, 100)) + '</div>';
+          }
+          
+          // Would our parser work?
+          const wouldWork = (sample.speaker || sample.speaker_name) && (sample.text || sample.content || sample.transcript);
+          analysis += '<div class="mt-4">' + (wouldWork ? '✅ <b style="color:var(--success)">Current parser CAN handle this format</b>' : '❌ <b style="color:var(--danger)">Current parser may FAIL on this format</b>') + '</div>';
+        }
+        
+      } else if (endpoint === 'bot_status') {
+        // Analyze bot status
+        const st = body?.status || body?.status_changes?.[body.status_changes.length - 1]?.code || 'unknown';
+        analysis += '<div class="mt-4"><b>Bot status:</b> ' + st + '</div>';
+        analysis += '<div class="mt-4"><b>Bot ID:</b> ' + (body?.id || botId) + '</div>';
+        if (body?.status_changes) {
+          analysis += '<div class="mt-4"><b>Status history:</b> ' + body.status_changes.map(s => s.code || s.status).join(' → ') + '</div>';
+        }
+      } else if (endpoint === 'bot_list') {
+        const bots = Array.isArray(body) ? body : (body?.data || body?.results || []);
+        analysis += '<div class="mt-4"><b>Recent bots:</b> ' + bots.length + '</div>';
+        if (bots.length > 0) {
+          const last = bots[0];
+          analysis += '<div class="mt-4"><b>Latest bot ID:</b> ' + (last?.id || 'unknown') + '</div>';
+          analysis += '<div class="mt-4"><b>Status:</b> ' + (last?.status || 'unknown') + '</div>';
+          // Fill bot ID field
+          if (last?.id) {
+            document.getElementById('directBotId').value = last.id;
+          }
+        }
+      }
+    }
+    
+    document.getElementById('directAnalysisContent').innerHTML = analysis;
+    document.getElementById('directTestAnalysis').style.display = 'block';
+    
+    toast(statusCode >= 400 ? 'error' : 'success', 'Direct API ' + statusCode, body?.detail || body?.message || (statusCode >= 400 ? 'Error' : 'OK'));
+    log(statusCode >= 400 ? 'red' : 'green', 'Direct API test: HTTP ' + statusCode);
+    switchTab('direct');
+  } catch(e) {
+    document.getElementById('directRawBox').textContent = 'Error: ' + e.message;
+    toast('error', 'API Test Failed', e.message);
+    log('red', 'Direct API test failed: ' + e.message);
+  }
+}
+
+/* ═══════════════════════════════════════
+   Render Overview
+   ═══════════════════════════════════════ */
+function renderOverview() {
+  const el = document.getElementById('overviewContent');
+  if (!el) return;
+
+  const botId = val('botId');
+  const hasTranscript = !!(state.cleanText || state.canonicalSegments.length);
+  const hasTreatment = !!state.treatedText;
+  const hasSdlc = !!state.sdlc;
+
+  let html = '<div style="font-size:11px;line-height:1.8">';
+  html += '<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="color:var(--muted)">Bot ID</span><span style="font-family:monospace;font-size:10px">' + (botId || '—') + '</span></div>';
+  html += '<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="color:var(--muted)">Transcript</span><span style="color:' + (hasTranscript ? 'var(--success)' : 'var(--muted)') + '">' + (hasTranscript ? 'Ready' : 'Not fetched') + '</span></div>';
+  html += '<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="color:var(--muted)">Treatment</span><span style="color:' + (hasTreatment ? 'var(--success)' : 'var(--muted)') + '">' + (hasTreatment ? 'Done' : 'Pending') + '</span></div>';
+  html += '<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="color:var(--muted)">SDLC Preview</span><span style="color:' + (hasSdlc ? 'var(--success)' : 'var(--muted)') + '">' + (hasSdlc ? 'Built' : 'Not built') + '</span></div>';
+
+  if (state.qualityScore) {
+    html += '<div style="display:flex;justify-content:space-between;padding:3px 0;border-top:1px solid var(--border);margin-top:4px;padding-top:4px"><span style="color:var(--muted)">Quality Score</span><span style="color:' + (state.qualityScore.quality_score >= 60 ? 'var(--success)' : 'var(--warning)') + '">' + state.qualityScore.quality_score + '/100</span></div>';
+  }
+
+  const segCount = state.canonicalSegments.length;
+  if (segCount > 0) {
+    html += '<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="color:var(--muted)">Segments</span><span>' + segCount + '</span></div>';
+  }
+
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+
+/* ═══════════════════════════════════════
+   Transcript Auto-Fetch Loop (RFC C)
+   ═══════════════════════════════════════ */
+const AUTOFETCH_SCHEDULE_MS = [5000, 10000, 15000, 30000]; // then 30s repeating
+
+function transcriptAutoFetchLoop(botId, options = {}) {
+  // Cancel any running timer — prevent duplicate loops
+  if (state.autoFetchTimer) {
+    clearTimeout(state.autoFetchTimer);
+    state.autoFetchTimer = null;
+  }
+  if (!options.continueCount) {
+    state.autoFetchAttempt = 0;
+    state.autoFetchActive = true;
+  }
+  if (!botId) { stopAutoFetch(); return; }
+  if (state.autoFetchAttempt >= state.autoFetchMax) {
+    state.autoFetchActive = false;
+    updateAutoFetchUI(false, '⚠ Max retries (' + state.autoFetchMax + ') reached. Click Fetch Transcript manually.');
+    log('red', 'Auto-fetch: max attempts reached.');
+    return;
+  }
+  state.autoFetchAttempt++;
+  const attempt = state.autoFetchAttempt;
+  const schedIdx = Math.min(attempt - 1, AUTOFETCH_SCHEDULE_MS.length - 1);
+  const delayMs = AUTOFETCH_SCHEDULE_MS[schedIdx];
+  const delaySec = Math.round(delayMs / 1000);
+  updateAutoFetchUI(true, '⏳ Transcript not ready. Auto retry ' + attempt + '/' + state.autoFetchMax + ' in ' + delaySec + 's…');
+  log('blue', 'Auto-fetch #' + attempt + '/' + state.autoFetchMax + ' scheduled in ' + delaySec + 's');
+  state.autoFetchTimer = setTimeout(async () => {
+    if (!state.autoFetchActive) return;
+    updateAutoFetchUI(true, '⏳ Auto-fetching transcript… attempt ' + attempt + '/' + state.autoFetchMax);
+    await fetchTranscript({ fromAutoLoop: true });
+  }, delayMs);
+}
+
+function stopAutoFetch() {
+  if (state.autoFetchTimer) {
+    clearTimeout(state.autoFetchTimer);
+    state.autoFetchTimer = null;
+  }
+  state.autoFetchActive = false;
+  state.autoFetchAttempt = 0;
+  updateAutoFetchUI(false, '');
+}
+
+function updateAutoFetchUI(active, msg) {
+  const el = $('autoFetchStatus');
+  const btn = $('btnStopAutoFetch');
+  if (el) {
+    el.style.display = (active || msg) ? 'block' : 'none';
+    el.textContent = msg || '';
+  }
+  if (btn) btn.style.display = active ? 'inline-block' : 'none';
+}
+
+/* ═══════════════════════════════════════
+   localStorage Recent Bot History (RFC G)
+   ═══════════════════════════════════════ */
+function saveBotToHistory(bot) {
+  try {
+    let history = JSON.parse(localStorage.getItem('recallBotHistory') || '[]');
+    const entry = {
+      bot_id: bot.bot_id,
+      region: val('region') || 'ap-northeast-1',
+      project_name: val('projectName') || 'RoyalSoft TMS',
+      created_at: new Date().toISOString(),
+      last_status: bot.bot_status || 'created'
+    };
+    history = history.filter(b => b.bot_id !== entry.bot_id);
+    history.unshift(entry);
+    history = history.slice(0, 10);
+    localStorage.setItem('recallBotHistory', JSON.stringify(history));
+    state.recentBots = history;
+    renderRecentBots();
+  } catch(e) {}
+}
+
+function loadLastBot() {
+  try {
+    const history = JSON.parse(localStorage.getItem('recallBotHistory') || '[]');
+    if (!history.length) { toast('warning', 'No History', 'No recent bots saved.'); return; }
+    const last = history[0];
+    setVal('botId', last.bot_id);
+    const regionSel = document.getElementById('region');
+    if (regionSel && last.region) regionSel.value = last.region;
+    if (last.project_name) setVal('projectName', last.project_name);
+    toast('success', 'Bot Loaded', last.bot_id.slice(0,12) + '… [' + last.region + ']');
+    log('green', 'Loaded last bot: ' + last.bot_id + ' region=' + last.region);
+    renderRecentBots();
+  } catch(e) { toast('error', 'Load Failed', e.message); }
+}
+
+function loadBot(botId, region, projectName) {
+  setVal('botId', botId);
+  const regionSel = document.getElementById('region');
+  if (regionSel && region) regionSel.value = region;
+  if (projectName) setVal('projectName', projectName);
+  toast('success', 'Bot Loaded', botId.slice(0,12) + '… [' + region + ']');
+  log('green', 'Loaded bot: ' + botId);
+}
+
+function renderRecentBots() {
+  const el = $('recentBotsPanel');
+  if (!el) return;
+  let history = [];
+  try { history = JSON.parse(localStorage.getItem('recallBotHistory') || '[]'); } catch(e) {}
+  if (!history.length) { el.innerHTML = ''; return; }
+  let html = '<div class="pretitle" style="margin-top:10px;margin-bottom:4px">Recent Bots</div>';
+  html += '<div style="font-size:10px;line-height:1.8">';
+  history.slice(0, 5).forEach(b => {
+    const ago = b.created_at ? new Date(b.created_at).toLocaleTimeString() : '?';
+    html += '<div style="display:flex;gap:6px;align-items:center;margin-bottom:2px">';
+    html += '<span style="font-family:monospace;color:var(--primary);font-size:9px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(b.bot_id.slice(0,14)) + '…</span>';
+    html += '<span style="color:var(--muted);font-size:9px">' + esc(b.region.replace('ap-northeast-1','ap-ne-1').replace('ap-southeast-1','ap-se-1').replace('us-west-2','us-w2').replace('us-east-1','us-e1').replace('eu-central-1','eu-c1')) + '</span>';
+    html += '<button class="btn ghost" onclick="loadBot(\'' + esc(b.bot_id) + '\',\'' + esc(b.region) + '\',\'' + esc(b.project_name || '') + '\')" style="font-size:9px;padding:2px 5px">Load</button>';
+    html += '</div>';
+  });
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+/* ═══════════════════════════════════════
+   Init
+   ═══════════════════════════════════════ */
+setInterval(renderOverview, 3000);
+loadConfig();
+detectPlatform();
+renderRecentBots();
+setStatus('⚙', 'Ready for meeting setup', 'Fill in the n8n endpoints and meeting URL, then click <b>Join Meeting</b>.', 'Ready');
+log('blue', 'Production dashboard loaded - auto-fetch loop + bot history active.');
+console.log('[Recall Dashboard] Loaded with upgrades: realtime_transcript_webhook, canonical_segments, quality_score, approval_gate');
+console.log('[Recall Dashboard] Realtime endpoint config:', val('epRealtimeTranscript') || DEFAULT_ENDPOINTS.epRealtimeTranscript);
+</script>
+</body>
+</html>
